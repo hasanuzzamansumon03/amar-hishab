@@ -550,15 +550,31 @@ save();closeModal();toast('সমন্বয়: '+fmt(diff));renderView()}
 
 /* ================= পাবো-দেবো খাতা ================= */
 function renderLedger(){const pd=totPaboDibo();
-const list=S.parties.slice().sort((a,b)=>partyBal(b.id)-partyBal(a.id));
 el('view-ledger').innerHTML='<div class="card"><div class="b3"><div><small>🔵 মোট পাবো</small><b class="grn">'+fmt(pd.po)+'</b></div>'
 +'<div><small>🔴 মোট দেবো</small><b class="red">'+fmt(pd.db)+'</b></div><div><small>মোট হিসাব</small><b>'+bn(S.parties.length)+' জন</b></div></div></div>'
 +'<div class="row2" style="margin-bottom:11px"><button class="btn" onclick="openPartyModal()">＋ নতুন হিসাব</button><button class="btn ghost" onclick="openPartyPicker()">⚡ পাবো/দেবো এন্ট্রি</button></div>'
-+'<div class="card" style="padding:4px 14px">'+(list.length?list.map(p=>{const b=partyBal(p.id);
++'<input class="inp" id="led_q" placeholder="🔍 নাম বা মোবাইল নম্বর লিখে খুঁজুন..." style="margin-bottom:8px" oninput="searchLedger(this.value)">'
++'<div class="seg" style="margin-bottom:10px">'
++'<button class="segb'+((cur.ledFilter||'all')==='all'?' on':'')+'" onclick="setLedFilter(\'all\')">সবাই</button>'
++'<button class="segb'+(cur.ledFilter==='cust'?' on':'')+'" onclick="setLedFilter(\'cust\')">🔵 গ্রাহক (পাবো)</button>'
++'<button class="segb'+(cur.ledFilter==='supp'?' on':'')+'" onclick="setLedFilter(\'supp\')">🔴 সাপ্লায়ার (দেবো)</button>'
++'</div><div class="card" style="padding:4px 14px" id="led_list"></div>';
+renderLedgerList()}
+function searchLedger(v){cur.ledQ=v;renderLedgerList()}
+function setLedFilter(f){cur.ledFilter=f;renderLedger()}
+function renderLedgerList(){const q=(cur.ledQ||'').trim();const f=cur.ledFilter||'all';
+let list=S.parties.slice();
+if(f==='cust')list=list.filter(p=>p.type==='cust');
+if(f==='supp')list=list.filter(p=>p.type==='supp');
+if(q)list=list.filter(p=>p.name.indexOf(q)>=0||String(p.phone||'').indexOf(q)>=0);
+list.sort((a,b)=>partyBal(b.id)-partyBal(a.id));
+const countInfo=q?('<small class="mut" style="display:block;padding:9px 2px 0">🔎 "'+esc(q)+'" — '+bn(list.length)+' জনের হিসাব পাওয়া গেছে</small>'):'';
+el('led_list').innerHTML=countInfo+(list.length?list.map(p=>{const b=partyBal(p.id);
 const cls=p.type==='cust'?(b>0?'grn':'mut'):(b>0?'red':'mut');
 const lbl=p.type==='cust'?(b>0.001?'পাবো':(b<-0.001?'অগ্রিম আছে':'পরিশোধিত')):(b>0.001?'দেবো':(b<-0.001?'অগ্রিম দেওয়া':'পরিশোধিত'));
 return '<div class="lrow" onclick="openPartyDetail(\''+p.id+'\')" style="cursor:pointer"><div class="lt"><b>'+esc(p.name)+(p.type==='supp'?' <span class="badge b-org">সাপ্লায়ার</span>':'')+'</b><small>'+esc(p.phone||'ফোন নেই')+'</small></div>'
-+'<div class="rt"><b class="'+cls+'">'+fmt(b)+'</b><small class="mut">'+lbl+' ›</small></div></div>'}).join(''):'<div class="empty">কোনো হিসাব নেই — গ্রাহক বা সাপ্লায়ার যোগ করুন</div>')+'</div>'}
++'<div class="rt"><b class="'+cls+'">'+fmt(b)+'</b><small class="mut">'+lbl+' ›</small></div></div>'}).join('')
+:(q?'<div class="empty">😱 "'+esc(q)+'" নামে কোনো হিসাব পাওয়া যায়নি<br><small>বানান মিলিয়ে দেখুন, অথবা উপরের "＋ নতুন হিসাব" দিয়ে খুলুন</small></div>':'<div class="empty">কোনো হিসাব নেই — গ্রাহক বা সাপ্লায়ার যোগ করুন</div>'))}
 function openPartyModal(id){const p=id?S.parties.find(x=>x.id===id):null;
 openModal(p?'✏️ হিসাব এডিট':'👤 নতুন হিসাব',
 '<label class="lbl">নাম *</label><input class="inp" id="pt_name" value="'+(p?esc(p.name):'')+'" placeholder="গ্রাহক বা সাপ্লায়ারের নাম">'
