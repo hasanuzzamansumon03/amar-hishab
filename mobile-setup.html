@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>শুধু মোবাইল দিয়েই সম্পূর্ণ সেটআপ — আমার হিসাব</title>
+<style>
+:root{--g1:#00897b;--g2:#00564c;--grn:#2e7d32;--red:#c62828;--org:#e65100;--ink:#17302b;--mut:#5f7772;--bg:#f2f7f6;--line:#d7e5e2}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans Bengali','Hind Siliguri','SolaimanLipi',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.8;font-size:16px}
+.wrap{max-width:720px;margin:0 auto;padding:16px 14px 60px}
+header.top{background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border-radius:18px;padding:24px 20px;margin-bottom:16px}
+header.top h1{font-size:23px;margin-bottom:4px}
+header.top p{opacity:.92;font-size:14px}
+.badge{display:inline-block;background:rgba(255,255,255,.2);border-radius:20px;padding:3px 12px;font-size:12px;margin:10px 4px 0 0}
+h2{font-size:19.5px;margin:30px 0 10px;padding:9px 14px;background:linear-gradient(90deg,#e0f2f0,transparent);border-left:5px solid var(--g1);border-radius:0 10px 10px 0}
+h3{font-size:16.5px;margin:18px 0 6px;color:var(--g2)}
+p{margin:8px 0}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin:12px 0;box-shadow:0 1px 4px rgba(20,80,70,.06)}
+.step{display:flex;gap:12px;margin:16px 0}
+.step .n{flex:none;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+.step .b{flex:1;border-bottom:1px dashed #d9e8e4;padding-bottom:14px}
+.step:last-child .b{border-bottom:none;padding-bottom:0}
+.step .b>b{display:block;margin-bottom:2px;font-size:15.5px}
+ol,ul{margin:8px 0 8px 22px}
+li{margin:6px 0}
+.kbd{border:1.5px solid #c7d6d2;border-bottom-width:3px;border-radius:7px;padding:1px 9px;background:#fff;font-size:13.5px;white-space:nowrap}
+.path{background:#eaf2f0;border-radius:6px;padding:0 7px;font-size:14px;font-family:monospace;color:#0b4f45;word-break:break-all}
+.btn-demo{display:inline-block;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border-radius:10px;padding:6px 14px;font-weight:700;font-size:13px}
+.warn{background:#fff8e6;border:1px solid #f0db9c;border-radius:12px;padding:11px 14px;margin:12px 0}
+.good{background:#e9f6ec;border:1px solid #bfe3c6;border-radius:12px;padding:11px 14px;margin:12px 0}
+.info{background:#e7f3f7;border:1px solid #bcdcea;border-radius:12px;padding:11px 14px;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0;background:#fff;border-radius:10px;overflow:hidden}
+th{background:var(--g1);color:#fff;text-align:left;padding:8px 10px;font-size:13.5px}
+td{padding:8px 10px;border-bottom:1px solid #e6efec;vertical-align:top}
+tr:last-child td{border-bottom:none}
+.choose{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.pathcard{background:#fff;border:2px solid var(--line);border-radius:14px;padding:13px;position:relative}
+.pathcard.rec{border-color:var(--g1);box-shadow:0 3px 10px rgba(0,137,123,.15)}
+.pathcard .tag{position:absolute;top:-11px;left:12px;background:var(--g1);color:#fff;font-size:11px;font-weight:800;border-radius:14px;padding:2px 10px}
+.pathcard h4{font-size:15.5px;margin:4px 0 6px}
+.pathcard small{color:var(--mut);font-size:12.5px;line-height:1.6;display:block}
+.pathcard .go{display:inline-block;margin-top:8px;background:#e0f2f0;color:var(--g2);border-radius:8px;padding:4px 12px;font-weight:700;font-size:12.5px;text-decoration:none}
+.q{background:#f7fbfa;border:1px dashed #b9d4ce;border-radius:10px;padding:10px 13px;margin:10px 0}
+.q b{color:var(--g2)}
+svg{max-width:100%;height:auto;display:block;margin:8px auto}
+footer{margin-top:40px;text-align:center;color:var(--mut);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+.chk{color:var(--grn);font-weight:700}
+.num{color:var(--red);font-weight:700}
+a{color:var(--g1)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+<h1>📱 শুধু মোবাইল দিয়েই সম্পূর্ণ সেটআপ</h1>
+<p>কম্পিউটার লাগবে না — আপনার ফোন আর ইন্টারনেটই যথেষ্ট। নিচের ধাপগুলো এক এক করে করুন।</p>
+<span class="badge">✅ ১০০% ফ্রি</span><span class="badge">⏱️ পথ ১: ২ মিনিট</span><span class="badge">⏱️ পথ ২: ১৫ মিনিট</span>
+</header>
+
+<div class="info"><b>👆 এই পেজটি ফোনেই পড়ছেন — খুব ভালো!</b> প্রতিটি ধাপ শেষ করে পরের ধাপে যান। কোথাও আটকে গেলে একই জায়গা থেকে আবার চেষ্টা করুন, তাও না হলে চ্যাটে জিজ্ঞেস করুন।</div>
+
+<h2>🎯 আগে বুঝে নিন — দুটি পথ, কোনটা নেবেন?</h2>
+<div class="choose">
+<div class="pathcard">
+<span class="tag" style="background:#f57f17">দ্রুর্ততম</span>
+<h4>পথ ১ — ফোনেই সরাসরি চালু</h4>
+<small>⏱️ মাত্র ২ মিনিট • ইন্টারনেট লাগবে না • আজই হিসাব শুরু করা যাবে<br><br>⚠️ বাঁধা: হোম স্ক্রিনে অ্যাপ-আইকন নয়, ফাইল থেকে খুলতে হবে; গুগল-ড্রাইভ অটো-ব্যাকআপ চলবে না (ম্যানুয়াল ব্যাকআপ চলবে)</small>
+<a class="go" href="#path1">পথ ১ দেখুন ↓</a>
+</div>
+<div class="pathcard rec">
+<span class="tag">✅ সুপারিশকৃত</span>
+<h4>পথ ২ — আসল অ্যাপের মতো (স্থায়ী)</h4>
+<small>⏱️ প্রায় ১৫ মিনিট • একবারই করতে হবে<br><br>🎁 পাবেন: হোম স্ক্রিনে নিজস্ব আইকন, অফলাইনে চলা, গুগল ড্রাইভে অটো-ব্যাকআপ, ফোন বদলালেও হিসাব হারাবে না</small>
+<a class="go" href="#path2">পথ ২ দেখুন ↓</a>
+</div>
+</div>
+<div class="good">💡 <b>সবচেয়ে ভালো পরিকল্পনা:</b> আগে <b>পথ ১</b> দিয়ে এখনই অ্যাপটি চালিয়ে দেখুন → পছন্দ হলে আজ রাতেই বা কাল <b>পথ ২</b> করে নিন। <span class="num">একটাই সতর্কতা:</span> দুই পথ একসাথে চালাবেন না — যে পথে আসল হিসাব রাখবেন, সেটাই ব্যবহার করুন (পাল্টাতে চাইলে অ্যাপের ব্যাকআপ-রিস্টোর দিয়ে ডেটা সরিয়ে নেওয়া যায়)।</div>
+
+<!-- ================================================= -->
+<h2>📥 ধাপ ০ — ফাইলগুলো ফোনে ডাউনলোড করুন (দুই পথের জন্যই আগে করুন)</h2>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>এই কথোপকথনে ফাইল তালিকায় যান</b>যেখানে <span class="path">amar-hishab</span> ফোল্ডারের ফাইলগুলো আছে (index.html, manifest.webmanifest, sw.js, icon-192.png, icon-512.png, guideline.html)।</div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>প্রতিটি ফাইল খুলুন → ডাউনলোড বাটনে ট্যাপ করুন</b>ফোনের <b>Download/ডাউনলোড</b> ফোল্ডারে সেভ হবে। <span class="num">৫টি ফাইল অবশ্যই নামবে:</span> index.html, manifest.webmanifest, sw.js, icon-192.png, icon-512.png (guideline.html ঐচ্ছিক — পড়ার জন্য)।</div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>মিলিয়ে নিন</b>ফোনের <b>Files / Files by Google / My Files</b> অ্যাপ → <b>Downloads</b> ফোল্ডার → ৫টি ফাইল আছে কি না দেখুন।</div></div>
+</div>
+<div class="warn">⚠️ <b>নাম ঠিক রাখুন:</b> ফাইলের নাম হুবহু একই থাকতে হবে — বিশেষ করে <span class="path">index.html</span>। যদি দ্বিতীয়বার ডাউনলোড করেন আর নাম দাঁড়ায় <span class="path">index (1).html</span> — সেটি বাদ দিয়ে প্রথমটি রাখুন, নয়তো পুরনোটি মুছে নতুনটির নাম বদলে <span class="path">index.html</span> করুন (Files অ্যাপে ফাইলে বেশি চেপে ধরে → Rename)।</div>
+
+<!-- ================================================= -->
+<h2 id="path1">🚀 পথ ১ — এখনই ফোনে চালু করুন (২ মিনিট)</h2>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>Files অ্যাপ খুলুন → Downloads → <span class="path">index.html</span> ফাইলটিতে ট্যাপ করুন</b></div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>"Open with Chrome" বাছুন</b>"Just once/একবারের জন্য" বা "Always/সবসময়" — সবসময় দিলে ভালো, পরে এক ট্যাপেই খুলবে। (তালিকায় Chrome না দেখালে অন্য ব্রাউজারও চলবে, তবে Chrome-ই ভালো।)</div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>ব্যস — অ্যাপ চালু! 🎉</b>উপরের ডান কোণে <b>"সেভ চালু ✓"</b> লেখা দেখলে বুঝবেন প্রতিটি হিসাব ফোনে স্থায়ীভাবে সেভ হচ্ছে।</div></div>
+<div class="step"><div class="n">৪</div><div class="b"><b>ডেমো দেখে নিন</b><b>আরও → সেটিংস → "ডেমো ডেটা দেখুন"</b> — সব ফিচার ঘুরে দেখুন। আসল ব্যবহার শুরুর আগে <b>"সব ডেটা মুছুন"</b> দিয়ে ফাঁকা করুন, তারপর নিচের "অ্যাপের ভেতরে প্রথম সেটআপ" করুন।</div></div>
+</div>
+<div class="info">📌 <b>পথ ১-এ প্রতিদিন এভাবে খুলবেন:</b> Files → Downloads → index.html ট্যাপ। ইন্টারনেট ছাড়াই চলবে। ডেটা মুছে না গেলে সব হিসাব থাকবে। <b>সাপ্তাহিক ব্যাকআপ:</b> অ্যাপে <b>আরও → ব্যাকআপ ও রিস্টোর → ⬇️ ব্যাকআপ ফাইল ডাউনলোড</b> → গুগল ড্রাইভ অ্যাপে গিয়ে ＋ → আপলোড → ওই ফাইলটি দিন।</div>
+
+<!-- ================================================= -->
+<h2 id="path2">🌟 পথ ২ — ফোন দিয়েই আসল অ্যাপ বানান (GitHub Pages, সম্পূর্ণ ফ্রি)</h2>
+<p>এতে আপনার অ্যাপ ইন্টারনেটে বসে যাবে (ঠিকানা পাবে), হোম স্ক্রিনে আইকন বসবে, অফলাইনে চলবে, আর গুগল ড্রাইভে অটো-ব্যাকআপও চালু করা যাবে। <b>কম্পিউটার লাগবে না</b> — শুধু ফোনের Chrome।</p>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>GitHub-এ ফ্রি অ্যাকাউন্ট খুলুন</b>
+ফোনের Chrome-এ যান <span class="path">github.com</span> → <b>Sign up</b> → ইমেইল (জিমেইল দিন), পাসওয়ার্ড, ইউজারনেম দিন (যেমন: <i>rahim-store</i>) → ইমেজলে যাওয়া কোড/লিংক দিয়ে ইমেইল ভেরিফাই করুন → লগইন করুন।</div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>নতুন "রিপোজিটরি" (ফাইল-ভাণ্ডার) বানান</b>
+GitHub-এর উপরে-ডানে <b>＋</b> চিহ্ন → <b>New repository</b> → Repository name: <span class="path">amar-hishab</span> → নিচে <b>Public</b> থাকা নিশ্চিত করুন (ফ্রি ওয়েবসাইটের জন্য Public লাগবে) → সবচেয়ে নিচে সবুজ <b>Create repository</b> বাটন।</div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>ফাইল আপলোড পেজে যান</b>
+খালি রিপোজিটরির পেজে লেখা থাকবে <b>"uploading an existing file"</b> — এই লিংকে ট্যাপ করুন। (খালি না হলে: সবুজ <b>&lt;&gt; Code</b> বাটনের পাশের <b>＋ Add file → Upload files</b>)।</div></div>
+<div class="step"><div class="n">৪</div><div class="b"><b>৫টি ফাইল বাছুন</b>
+<b>"choose your files"</b> লেখায় ট্যাপ করুন → ফোনের ফাইল-পিকার খুলবে → <b>Downloads</b> ফোল্ডারে যান → <b>প্রথম ফাইলে বেশিক্ষণ চেপে ধরুন</b> (টিক বসবে) → বাকি ৪টিতে ট্যাপ করে টিক দিন (index.html, manifest.webmanifest, sw.js, icon-192.png, icon-512.png) → <b>Open/খুলুন</b>।</div></div>
+<div class="step"><div class="n">৫</div><div class="b"><b>সেভ করুন</b>
+ফাইলের নামগুলো তালিকায় দেখা যাবে → নিচে <b>Commit changes</b> সবুজ বাটনে ট্যাপ করুন। কয়েক সেকেন্ডে ৫টি ফাইল আপলোড হয়ে যাবে।</div></div>
+<div class="step"><div class="n">৬</div><div class="b"><b>ওয়েবসাইট চালু করুন (Pages)</b>
+রিপোজিটরির উপরে <b>⚙ Settings</b> ট্যাপ করুন → <b>Pages</b> লেখাটি খুঁজুন (বাম দিকের মেনুর "Code and automation" অংশে)।<br>
+<span class="num">⚙ Settings বা Pages না দেখলে:</span> Chrome মেনু <b>⋮ → "Desktop site" চালু</b> করে পেজটি রিফ্রেশ করুন — তাহলেই সব অপশন দেখা যাবে।</div></div>
+<div class="step"><div class="n">৭</div><div class="b"><b>Pages-এর সেটিং দিন</b>
+<b>Build and deployment</b> অংশে → Source: <b>Deploy from a branch</b> → Branch: <b>main</b>, ফোল্ডার: <b>/ (root)</b> → <b>Save</b>।</div></div>
+<div class="step"><div class="n">৮</div><div class="b"><b>১–২ মিনিট অপেক্ষা করুন, তারপর লিংক পান</b>
+আবার Settings → Pages এ ঢুকুন — উপরে সবুজ লেখায় আপনার ঠিকানা দেখা যাবে:<br>
+<span class="path">https://আপনার-ইউজারনেম.github.io/amar-hishab/</span><br>
+লিংকে ট্যাপ করলেই অ্যাপটি চালু হবে! 🎉 (লিংকটি কপি করে কোথাও সেভ করে রাখুন।)</div></div>
+<div class="step"><div class="n">৯</div><div class="b"><b>হোম স্ক্রিনে অ্যাপের মতো বসান</b>
+ওই ঠিকানাটি Chrome-এ খোলা অবস্থায় → Chrome মেনু <b>⋮</b> → <b>Add to Home screen / Install app</b> → <b>Install/Add</b>। হোম স্ক্রিনে <span class="btn-demo">📒 আমার হিসাব</span> আইকন বসে যাবে — এক ট্যাপে ফুলস্ক্রিন অ্যাপের মতোই খুলবে, ইন্টারনেট ছাড়াও চলবে।</div></div>
+</div>
+<div class="good">✅ <b>পথ ২ সম্পূর্ণ!</b> এখন থেকে অ্যাপ = হোম স্ক্রিনের ওই আইকন। প্রতিটি হিসাব ফোনে সেভ হবে + চাইলে গুগল ড্রাইভে অটো-ব্যাকআপ (নিচে দেখুন)। ফোন হারিয়ে/বদলে ফেললেও: নতুন ফোনে একই ঠিকানা খুলে → ড্রাইভ থেকে রিস্টোর করলেই সব হিসাব ফিরে পাবেন।</div>
+
+<!-- ================================================= -->
+<h2>⚙️ অ্যাপের ভেতরে প্রথম সেটআপ (যে পথই নিন, ৫ মিনিট লাগবে)</h2>
+<div class="card">
+<ol>
+<li><b>আরও → সেটিংস →</b> দোকানের নাম লিখুন; "প্রারম্ভিক নগদ তহবিল"-এ আজ হাতে যত টাকা আছে দিন → সংরক্ষণ</li>
+<li><b>একই পেজে নিচে:</b> প্রতিটি ওয়ালেটের (বিকাশ/নগদ/রকেট/উপায়) <b>প্রতি ১০০০ টাকার কমিশন রেট</b> আপনার চুক্তি অনুযায়ী বসান + প্রতিটি অপারেটরের (জিপি/রবি/বাংলালিংক/টেলিটক) রিচার্জ রেট বসান</li>
+<li><b>"প্রারম্ভিক ব্যালান্স"</b> ঘরে প্রতিটি ওয়ালেট ও অপারেটরে এখন যত টাকা আছে তা দিন → <b>সব রেট ও ব্যালান্স সংরক্ষণ</b></li>
+<li><b>মুদি → স্টক → ＋ নতুন পণ্য</b> — নাম, একক, ক্রয় মূল্য, বিক্রয় মূল্য, পরিমাণ দিয়ে পণ্য যোগ করুন</li>
+<li>(ঐচ্ছিক) <b>সেটিংস → নিরাপত্তা →</b> ৪ সংখ্যার <b>PIN লক</b> চালু করুন</li>
+</ol>
+<p class="mut">ব্যস! এখন প্রতিদিনের রুটিন ও ব্যবহারের নিয়ম জানতে <span class="path">guideline.html</span> ফাইলটি পড়ুন।</p>
+</div>
+
+<!-- ================================================= -->
+<h2>☁️ গুগল ড্রাইভে ব্যাকআপ (ফোন দিয়েই)</h2>
+<h3>পদ্ধতি ক — ম্যানুয়াল (সবার জন্য, যেকোনো পথেই চলে)</h3>
+<div class="card">
+<ol>
+<li>অ্যাপে: <b>আরও → ব্যাকআপ ও রিস্টোর → ⬇️ ব্যাকআপ ফাইল ডাউনলোড</b> — <span class="path">amar-hishab-backup-তারিখ.json</span> ফাইলটি Downloads-এ নামবে</li>
+<li>ফোনের <b>গুগল ড্রাইভ অ্যাপ</b> খুলুন → নিচে <b>＋ (নতুন)</b> → <b>আপলোড</b> → Downloads → ওই ফাইলটি বাছুন</li>
+<li>ফেরানোর সময় (নতুন ফোনে/ডেটা হারালে): ড্রাইভ থেকে ফাইলটি ফোনে ডাউনলোড → অ্যাপে <b>⬆️ ব্যাকআপ থেকে ফিরিয়ে আনুন</b> → ফাইলটি বাছুন → সব হিসাব ফিরে আসবে</li>
+</ol>
+<p>🗓️ <b>নিয়ম: সপ্তাহে ১ বার + মাস শেষে ১ বার</b> — মাত্র ৩০ সেকেন্ড।</p>
+</div>
+<h3>পদ্ধতি খ — অটো, এক ট্যাপে (শুধু পথ ২-এ চলে; একবার সেটআপ)</h3>
+<div class="card">
+<p>এতে অ্যাপের ভেতর থেকেই সরাসরি আপনার ড্রাইভে ব্যাকআপ যাবে-আসবে। সেটআপটা ফোনেই করা যায়, শুধু একটু ধৈর্য লাগে:</p>
+<ol>
+<li>Chrome-এ <span class="path">console.cloud.google.com</span> খুলুন → জিমেইল দিয়ে সাইন-ইন → উপরে <b>☰ → New Project</b> → নাম <i>Amar Hishab</i> → Create (মেনু/অপশন পুরো না দেখালে Chrome-এর <b>⋮ → Desktop site</b> চালু করুন)</li>
+<li>উপরের সার্চে লিখুন <b>Google Drive API</b> → ঢুকে <b>Enable</b></li>
+<li>বাম মেনু <b>APIs &amp; Services → OAuth consent screen</b> → External → App name: <i>Amar Hishab</i> → নিজের জিমেইল দিন → Test users-এ <b>নিজের জিমেইল যোগ করুন</b></li>
+<li><b>Credentials →＋ Create Credentials → OAuth client ID</b> → Type: <b>Web application</b> → <b>Authorized JavaScript origins</b>-এ দিন আপনার অ্যাপের ঠিকানা (যেমন <span class="path">https://rahim-store.github.io</span> — শেষে / দেবেন না) → Create → Client ID কপি করুন</li>
+<li>অ্যাপে: <b>আরও → সেটিংস → Google OAuth Client ID</b> ঘরে বসান → সংরক্ষণ। এরপর <b>আরও → ব্যাকআপ → ☁️ ড্রাইভে ব্যাকআপ দিন</b> — গুগল অনুমতি চাইলে Allow করুন। ব্যস!</li>
+</ol>
+<p class="mut">শুরুতে হিসাব কম থাকায় <b>পদ্ধতি ক-ই যথেষ্ট</b> — পদ্ধতি খ পরে যখন সময় হবে তখন করুন। বিস্তারিত guideline.html এর ৫ নম্বর ধাপে আছে।</p>
+</div>
+
+<!-- ================================================= -->
+<h2>🔧 সমস্যা হলে (ফোন-বিশেষ সমাধান)</h2>
+<div class="card">
+<div class="q"><b>Files অ্পে index.html ট্যাপ করলে কিছু খুলছে না?</b><br>ফাইলটি বেশিক্ষণ চেপে ধরুন → ⋮ বা তিন-ডট মেনু → <b>Open with → Chrome</b>। তাও না হলে Chrome অ্যাপের অ্যাড্রেস বারে লিখুন <span class="path">file:///sdcard/Download/index.html</span> বা <span class="path">content://</span> দিয়ে খুঁজুন — অথবা পথ ২ করে ফেলুন, সেটাই ঝামেলাহীন।</div>
+<div class="q"><b>GitHub-এ "Settings" বা "Pages" খুঁজে পাচ্ছি না?</b><br>Chrome মেনু <b>⋮ → Desktop site</b> চালু করে পেজ রিফ্রেশ করুন — GitHub মোবাইল ভার্সনে কিছু অপশন লুকিয়ে রাখে। Desktop site চালু করলেই দেখা যায়।</div>
+<div class="q"><b>GitHub আপলোডে "choose your files" এ ট্যাপ করে একাধিক ফাইল বাছাই করতে পারছি না?</b><br>প্রথম ফাইলে <b>বেশিক্ষণ চেপে ধরে</b> টিক বসান, তারপর বাকিগুলোতে এক এক ট্যাপে টিক উঠবে। না পারলে ৫টি ফাইল ৫ বারে (একটি একটি করে) আপলোড করুন — Add file → Upload files বারবার খুলে।</div>
+<div class="q"><b>Pages লিংক খুলছে না (404)?</b><br>Save করার পর ১–২ মিনিট সময় দিন, তারপর রিফ্রেশ করুন। ঠিকানায় ইউজারনেম ও রিপোর নাম <b>হুবহু</b> আছে কি না মিলিয়ে দেখুন (বড় হাতের-ছোট হাতের অক্ষরও)। Branch অবশ্যই <b>main</b> ও ফোল্ডার <b>/ (root)</b> সেট করতে হবে।</div>
+<div class="q"><b>"Add to Home screen"-এ আইকন একটু অন্যরকম দেখাচ্ছে?</b><br>সমস্যা নেই — ট্যাপ করলেই অ্যাপ ফুলস্ক্রিনে খুলবে। ইনস্টলের পর একবার ইন্টারনেট চালু অবস্থায় খুলে নিন, তারপর থেকে অফলাইনেও চলবে।</div>
+<div class="q"><b>ডেটা সেভ হচ্ছে কি না বুঝব কীভাবে?</b><br>অ্যাপের হেডারে ডানে <span class="chk">"সেভ চালু ✓"</span> লেখা থাকলে নিশ্চিত থাকুন। আরও নিশ্চিত হতে: একটি বিক্রয় দিন → অ্যাপ বন্ধ করুন → আবার খুলুন — হিসাবটি থেকে গেলেই সেভ হচ্ছে।</div>
+<div class="q"><b>ভুলবশত পথ ১-এ অনেক হিসাব দিয়ে ফেলেছি, এখন পথ ২-এ যেতে চাই?</b><br>পথ ১-এর অ্যাপ থেকে <b>⬇️ ব্যাকআপ ফাইল ডাউনলোড</b> করুন → পথ ২-এর অ্যাপ খুলে <b>⬆️ রিস্টোর</b> করুন → সব হিসাব চলে আসবে। এরপর থেকে শুধু পথ ২-এর অ্যাপ ব্যবহার করুন।</div>
+<div class="q"><b>অ্যাপ আপডেট করব কীভাবে (ভবিষ্যতে নতুন ভার্সন এলে)?</b><br>পথ ২ হলে: চ্যাট থেকে নতুন index.html ডাউনলোড → GitHub রিপো → Add file → Upload files → নতুন ফাইল দিন ("Commit changes") → ১ মিনিটে অ্যাপ আপডেট। আপনার পুরনো হিসাব অক্ষত থাকবে।</div>
+</div>
+
+<!-- ================================================= -->
+<h2>✅ চূড়ান্ত চেকলিস্ট</h2>
+<div class="card">
+<ol>
+<li>📥 ৫টি ফাইল ফোনে ডাউনলোড হয়েছে</li>
+<li>🚀 অ্যাপ খুলে দেখেছি, ডেমো ডেটা দিয়ে বুঝেছি</li>
+<li>🌟 (সুপারিশকৃত) GitHub Pages-এ বসিয়ে হোম স্ক্রিনে আইকন বসিয়েছি</li>
+<li>⚙️ দোকানের নাম, হাতের নগদ, সব কমিশন রেট ও ব্যালান্স বসিয়েছি</li>
+<li>☁️ গুগল ড্রাইভে প্রথম ব্যাকআপ দিয়েছি</li>
+<li>🗓️ রুটিন ঠিক করেছি: দিন শেষে রিপোর্ট দেখা + সপ্তাহে ১ ব্যাকআপ</li>
+</ol>
+</div>
+
+<footer>📒 আমার হিসাব — শুধু মোবাইল দিয়েই সেটআপ গাইড v1.0<br>কোথাও আটকে গেলে চ্যাটে জানান — ধাপটি আরও সহজ করে বুঝিয়ে দেওয়া হবে।</footer>
+</div>
+</body>
+</html>
