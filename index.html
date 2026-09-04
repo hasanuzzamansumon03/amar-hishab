@@ -155,7 +155,7 @@ function fmtDate(ds){if(!ds)return '';const p=String(ds).split('-');return bn(+p
 /* ================= ডেটা মডেল ================= */
 function freshState(){return{
   v:1,
-  settings:{shopName:'আমার দোকান',ownerName:'',ownerPhone:'',openingCash:0,pin:'',passHash:'',passHint:'',driveClientID:'',lastDrive:'',autoRemind:true,remindOff:''},
+  settings:{shopName:'আমার দোকান',ownerName:'',ownerPhone:'',openingCash:0,pin:'',passHash:'',passHint:'',driveClientID:'',lastDrive:'',autoRemind:true,remindOff:'',autoBackup:true,gTok:null,lastAutoFail:0},
   parties:[],partyTxns:[],
   products:[],sales:[],purchases:[],expenses:[],
   wallets:[
@@ -772,7 +772,9 @@ el('view-more').innerHTML='<button class="btn sm ghost" style="margin-bottom:10p
 +'<button class="btn" style="margin-top:12px" onclick="saveRates()">✅ সব রেট ও ব্যালান্স সংরক্ষণ</button>'
 +'<small class="mut" style="display:block;margin-top:6px">⚠️ ডিফল্ট রেট অনুমান করে দেওয়া — আপনার সিম/এজেন্সির চুক্তি অনুযায়ী ঠিক করে নিন। এরপর সব কমিশন অটোমেটিক হিসাব হবে।</small></div>'
 +'<div class="card"><div class="ch">☁️ গুগল ড্রাইভ অটো-ব্যাকআপ</div>'
-+'<div class="lrow" style="border:none;padding:0 0 8px"><div class="lt"><b>অটো ব্যাকআপ রিমাইন্ডার</b><small>ব্যাকআপ দেওয়া না হলে হোমপেজে নিজেই মনে করিয়ে দেবে</small></div>'
++'<div class="lrow" style="border:none;padding:0 0 8px"><div class="lt"><b>🤖 স্বয়ংক্রিয় ব্যাকআপ (দিনে ২ বার)</b><small>অ্যাপ খুললেই এবং খোলা থাকার মাঝে প্রতি ৩০ মিনিটে নিজে নিজেই ড্রাইভে সেভ হবে — বাটন চাপার দরকার নেই।'+(S.settings.lastDrive?('<br>⏱ শেষ ব্যাকআপ: '+fmtDate(String(S.settings.lastDrive).slice(0,10))+', '+String(new Date(S.settings.lastDrive).getHours()).padStart(2,'0')+':'+String(new Date(S.settings.lastDrive).getMinutes()).padStart(2,'0')+' মিনিট'):'<br>এখনো কোনো ব্যাকআপ হয়নি')+'</small></div>'
++'<button class="btn sm'+(S.settings.autoBackup===false?' ghost':'')+'" onclick="toggleAutoBackup()">'+(S.settings.autoBackup===false?'বন্ধ':'চালু ✓')+'</button></div>'
++'<div class="lrow" style="border:none;padding:0 0 8px"><div class="lt"><b>রিমাইন্ডার ব্যানার</b><small>ব্যাকআপ দেওয়া না হলে হোমপেজে নিজেই মনে করিয়ে দেবে</small></div>'
 +'<button class="btn sm'+(S.settings.autoRemind?'':' ghost')+'" onclick="toggleAutoRemind()">'+(S.settings.autoRemind?'চালু ✓':'বন্ধ')+'</button></div>'
 +'<label class="lbl">Google OAuth Client ID</label><input class="inp" id="st_cid" value="'+esc(S.settings.driveClientID)+'" placeholder="xxxxx.apps.googleusercontent.com">'
 +'<button class="btn" style="margin-top:10px" onclick="saveCID()">সংরক্ষণ করুন</button>'
@@ -786,6 +788,7 @@ S.operators.forEach(o=>{o.rate=+el('op_'+o.key+'_rate').value||0;o.opening=+el('
 save();toast('সব রেট সংরক্ষিত ✅');renderView()}
 function saveCID(){S.settings.driveClientID=el('st_cid').value.trim();save();toast('Client ID সংরক্ষিত ✅')}
 function toggleAutoRemind(){S.settings.autoRemind=!S.settings.autoRemind;save();renderView()}
+function toggleAutoBackup(){S.settings.autoBackup=!(S.settings.autoBackup!==false);save();renderView();if(S.settings.autoBackup)maybeAutoBackup()}
 function openAddWallet(){openModal('＋ নতুন ওয়ালেট/ব্যাংক',
 '<label class="lbl">নাম *</label><input class="inp" id="nw_name" placeholder="যেমন: ট্যাপ, মাকাশ, আইপিএস">'
 +'<div class="row3"><div><label class="lbl">ক্যাশ ইন রেট</label><input class="inp" id="nw_ci" type="number" inputmode="decimal" value="15"></div>'
@@ -829,12 +832,12 @@ L.innerHTML='<div class="lockback"><div style="font-size:52px">🔐</div>'
 +'<button class="btn" style="max-width:180px" onclick="chkLock()">খুলুন</button></div>';
 setTimeout(()=>{try{el('lockPin').focus()}catch(e){}},80)}}
 function chkLock(){const v=el('lockPin').value;if(v.length<4)return;
-if(v===S.settings.pin){el('lockRoot').innerHTML='';toast('স্বাগতম! 🙏')}else{toast('ভুল PIN');el('lockPin').value=''}}
+if(v===S.settings.pin){el('lockRoot').innerHTML='';toast('স্বাগতম! 🙏');setTimeout(maybeAutoBackup,1500)}else{toast('ভুল PIN');el('lockPin').value=''}}
 function tryLogin(){const ph=(el('lg_phone').value||'').replace(/\D/g,'');const stored=(S.settings.ownerPhone||'').replace(/\D/g,'');
 if(!ph||!el('lg_pass').value)return toast('মোবাইল নম্বর ও পাসওয়ার্ড দিন');
 if(ph!==stored)return toast('এই নম্বরটি রেজিস্টার্ড নয়');
 if(sHash(el('lg_pass').value)!==S.settings.passHash)return toast('ভুল পাসওয়ার্ড');
-el('lockRoot').innerHTML='';toast('স্বাগতম'+(S.settings.ownerName?', '+S.settings.ownerName:'')+' 🙏')}
+el('lockRoot').innerHTML='';toast('স্বাগতম'+(S.settings.ownerName?', '+S.settings.ownerName:'')+' 🙏');setTimeout(maybeAutoBackup,1500)}
 function showForgot(){el('lockRoot').innerHTML='<div class="lockback" style="padding:16px"><div style="font-size:44px">🤔</div>'
 +'<h2 style="margin:6px 0 4px;font-size:20px">পাসওয়ার্ড রিকভারি</h2>'
 +'<small style="opacity:.85;margin-bottom:6px">আপনার সেট করা হিন্ট:</small>'
@@ -893,7 +896,8 @@ el('view-more').innerHTML='<button class="btn sm ghost" style="margin-bottom:10p
 +(S.settings.driveClientID?'':'<div class="alertcard">প্রথমে <b>সেটিংস</b>-এ Google Client ID বসান — কীভাবে আনবেন তা <b>drive-backup-guide.html</b> গাইডে ধাপে ধাপে দেখানো আছে। তারপর এখানে এক ট্যাপেই আপনার নিজের ড্রাইভে ব্যাকআপ যাবে ও ফিরে আসবে — সম্পূর্ণ ফ্রি।</div>')
 +'<button class="btn" onclick="driveBackup()"'+(S.settings.driveClientID?'':' disabled style="opacity:.5"')+'>☁️ ড্রাইভে ব্যাকআপ দিন</button><div style="height:9px"></div>'
 +'<button class="btn ghost" onclick="driveRestore()"'+(S.settings.driveClientID?'':' disabled style="opacity:.5"')+'>☁️ ড্রাইভ থেকে রিস্টোর করুন</button>'
-+'<div id="drvStatus" class="mut" style="margin-top:8px;font-size:13px"></div></div>'}
++'<div id="drvStatus" class="mut" style="margin-top:8px;font-size:13px"></div>'
++'<div class="good" style="margin-top:10px;font-size:13px">🤖 <b>স্বয়ংক্রিয় ব্যাকআপ '+(S.settings.autoBackup===false?'বন্ধ আছে':'চালু আছে ✓')+'</b> — চালু থাকলে অ্যাপ খুললেই ও খোলা থাকার মাঝে প্রতি ৩০ মিনিটে ১১+ ঘণ্টা পুরনো হিসাব নিজে নিজেই ড্রাইভে সেভ হয়ে যায়।'+(S.settings.lastDrive?(' শেষ ব্যাকআপ: '+fmtDate(String(S.settings.lastDrive).slice(0,10))):'')+'</div></div>'}
 function exportData(){try{S.savedAt=new Date().toISOString();save();
 const blob=new Blob([JSON.stringify(S)],{type:'application/json'});
 const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='amar-hishab-backup-'+todayISO()+'.json';
@@ -911,27 +915,47 @@ if(window.google&&window.google.accounts&&window.google.accounts.oauth2)return r
 const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';
 s.onload=()=>res();s.onerror=()=>rej(new Error('ইন্টারনেট সংযোগ বা Google স্ক্রিপ্ট লোড হয়নি'));
 document.head.appendChild(s)})}
-function drvToken(){if(!S.settings.driveClientID)return Promise.reject(new Error('আগে সেটিংসে Client ID বসান'));
+function getDrvToken(interactive){
+if(!S.settings.driveClientID)return Promise.reject(new Error('আগে সেটিংসে Client ID বসান'));
+if(S.settings.gTok&&S.settings.gTok.tk&&Date.now()<S.settings.gTok.exp-60000)return Promise.resolve(S.settings.gTok.tk);
 return loadGsi().then(()=>new Promise((res,rej)=>{try{
 const tc=window.google.accounts.oauth2.initTokenClient({client_id:S.settings.driveClientID,
 scope:'https://www.googleapis.com/auth/drive.file',
-callback:t=>{if(t&&t.access_token)res(t.access_token);else rej(new Error('লগইন ব্যর্থ হয়েছে'))}});
-tc.requestAccessToken()}catch(e){rej(e)}}))}
+callback:t=>{if(t&&t.access_token){S.settings.gTok={tk:t.access_token,exp:Date.now()+((t.expires_in||3600)-120)*1000};save();res(t.access_token)}else rej(new Error('লগইন ব্যর্থ হয়েছে'))},
+error_callback:e=>{rej(new Error(interactive?'লগইন ব্যর্থ হয়েছে':'স্বয়ংক্রিয় লগইন সম্ভব হয়নি'))}});
+tc.requestAccessToken(interactive?{}:{prompt:'none'})}catch(e){rej(e)}}))}
 function drvStatus(m){const d=el('drvStatus');if(d)d.textContent=m}
-function driveBackup(){drvStatus('অপেক্ষা করুন... লগইন উইন্ডো আসতে পারে');
-drvToken().then(tk=>{const data=JSON.stringify(Object.assign({},S,{savedAt:new Date().toISOString()}));
-const q=encodeURIComponent("name = '"+DRV_FILE+"' and trashed = false");
+function uploadToDrive(tk,data){const q=encodeURIComponent("name = '"+DRV_FILE+"' and trashed = false");
 return fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name,modifiedTime)',{headers:{Authorization:'Bearer '+tk}})
 .then(r=>r.json()).then(j=>{
 const fid=j.files&&j.files[0]&&j.files[0].id;
 if(fid)return fetch('https://www.googleapis.com/upload/drive/v3/files/'+fid+'?uploadType=media',{method:'PATCH',headers:{Authorization:'Bearer '+tk,'Content-Type':'application/json'},body:data});
 const b='xxamarhishabxx';const meta={name:DRV_FILE,mimeType:'application/json'};
 const body='--'+b+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(meta)+'\r\n--'+b+'\r\nContent-Type: application/json\r\n\r\n'+data+'\r\n--'+b+'--';
-return fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:'Bearer '+tk,'Content-Type':'multipart/related; boundary='+b},body:body})})
-.then(r=>{if(r.ok){S.settings.lastDrive=new Date().toISOString();save();drvStatus('✅ ব্যাকআপ সফল! আপনার গুগল ড্রাইভে "'+DRV_FILE+'" নামে সেভ হয়েছে।');toast('ড্রাইভে ব্যাকআপ সফল ✅');if(cur.tab==='home')renderView()}else drvStatus('ব্যাকআপ ব্যর্থ (কোড '+r.status+') — গাইড দেখুন')})})
+return fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:'Bearer '+tk,'Content-Type':'multipart/related; boundary='+b},body:body})})}
+function driveBackup(){drvStatus('অপেক্ষা করুন... লগইন উইন্ডো আসতে পারে');
+getDrvToken(true).then(tk=>uploadToDrive(tk,JSON.stringify(Object.assign({},S,{savedAt:new Date().toISOString()}))))
+.then(r=>{if(r.ok){S.settings.lastDrive=new Date().toISOString();save();drvStatus('✅ ব্যাকআপ সফল! আপনার গুগল ড্রাইভে "'+DRV_FILE+'" নামে সেভ হয়েছে।');toast('ড্রাইভে ব্যাকআপ সফল ✅');if(cur.tab==='home')renderView()}else drvStatus('ব্যাকআপ ব্যর্থ (কোড '+r.status+') — গাইড দেখুন')})
 .catch(e=>{drvStatus('❌ '+(e&&e.message?e.message:'ব্যর্থ হয়েছে'))})}
+/* --- 🤖 স্বয়ংক্রিয় ব্যাকআপ: অ্যাপ খুললেই + খোলা থাকলে প্রতি ৩০ মিনিটে (১১+ ঘণ্টা পার হলে) --- */
+let __autoBusy=false;
+function hoursSinceBackup(){const l=S.settings.lastDrive;if(!l)return 999;try{return (Date.now()-new Date(l).getTime())/3600000}catch(e){return 999}}
+function maybeAutoBackup(){
+if(!canStore||!S.settings.driveClientID)return;
+if(S.settings.autoBackup===false)return;
+if(__autoBusy||hoursSinceBackup()<11)return;
+__autoBusy=true;
+getDrvToken(false)
+.then(tk=>uploadToDrive(tk,JSON.stringify(Object.assign({},S,{savedAt:new Date().toISOString()}))))
+.then(r=>{if(!r.ok)throw new Error('আপলোড ব্যর্থ ('+r.status+')');
+S.settings.lastDrive=new Date().toISOString();save();
+toast('☁️ স্বয়ংক্রিয় ব্যাকআপ সম্পন্ন ✅');if(cur.tab==='home')renderView()})
+.catch(e=>{const now=Date.now();
+if(now-(S.settings.lastAutoFail||0)>6*3600000){S.settings.lastAutoFail=now;save();
+toast('☁️ স্বয়ংক্রিয় ব্যাকআপ সম্ভব হয়নি — "ড্রাইভে ব্যাকআপ" বাটনে একবার চাপ দিন')}})
+.then(()=>{__autoBusy=false})}
 function driveRestore(){drvStatus('অপেক্ষা করুন...');
-drvToken().then(tk=>{const q=encodeURIComponent("name = '"+DRV_FILE+"' and trashed = false");
+getDrvToken(true).then(tk=>{const q=encodeURIComponent("name = '"+DRV_FILE+"' and trashed = false");
 return fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name,modifiedTime)',{headers:{Authorization:'Bearer '+tk}})
 .then(r=>r.json()).then(j=>{const f=j.files&&j.files[0];
 if(!f)throw new Error('ড্রাইভে কোনো ব্যাকআপ ফাইল পাওয়া যায়নি');
@@ -955,7 +979,7 @@ const total=t2(items.reduce((s,i)=>s+i.sell*i.qty,0));const cost=t2(items.reduce
 const due=t2(Math.max(0,total-paid));const id=uid();
 S.sales.push({id:id,ts:Date.now(),date:date,items:items,total:total,cost:cost,profit:t2(total-cost),paid:t2(paid),due:due,partyId:partyId||''});
 if(partyId&&due>0)S.partyTxns.push({id:uid(),ts:Date.now(),date:date,partyId:partyId,kind:'due',amount:due,cash:0,note:'বাকি বিক্রয়',saleId:id})}
-function loadDemo(silent){const keep={passHash:S.settings.passHash,ownerPhone:S.settings.ownerPhone,passHint:S.settings.passHint,pin:S.settings.pin,ownerName:S.settings.ownerName,driveClientID:S.settings.driveClientID,lastDrive:S.settings.lastDrive,autoRemind:S.settings.autoRemind};
+function loadDemo(silent){const keep={passHash:S.settings.passHash,ownerPhone:S.settings.ownerPhone,passHint:S.settings.passHint,pin:S.settings.pin,ownerName:S.settings.ownerName,driveClientID:S.settings.driveClientID,lastDrive:S.settings.lastDrive,autoRemind:S.settings.autoRemind,autoBackup:S.settings.autoBackup,gTok:S.settings.gTok};
 S=freshState();Object.assign(S.settings,keep);const st=S.settings;
 st.shopName='ডেমো মুদি ষ্টোর';st.openingCash=5000;
 [['চাল (মিনিকেট)','কেজি',68,74,50,10],['চিনি','কেজি',118,128,20,5],['সয়াবিন তেল ৫ লিটার','পিস',810,860,12,3],
@@ -1003,6 +1027,9 @@ function resetAll(){confirmBox('⚠️ সব ডেটা মুছে ফে�
 function init(){el('h_store').textContent=canStore?'সেভ চালু ✓':'প্রিভিউ';
 if(S.settings.passHash||S.settings.pin)showLock();
 go('home');
+setInterval(maybeAutoBackup,30*60*1000);
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')setTimeout(maybeAutoBackup,1500)});
+if(!S.settings.passHash&&!S.settings.pin)setTimeout(maybeAutoBackup,2500);
 if('serviceWorker' in navigator&&location.protocol==='https:'){try{navigator.serviceWorker.register('sw.js').catch(function(){})}catch(e){}}}
 init();
 </script>
