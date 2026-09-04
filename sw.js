@@ -1,5 +1,5 @@
 /* আমার হিসাব — অফলাইন সার্ভিস ওয়ার্কার */
-const CACHE = 'amar-hishab-v2';
+const CACHE = 'amar-hishab-v3';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
