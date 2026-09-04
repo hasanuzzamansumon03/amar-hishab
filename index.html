@@ -155,7 +155,7 @@ function fmtDate(ds){if(!ds)return '';const p=String(ds).split('-');return bn(+p
 /* ================= ডেটা মডেল ================= */
 function freshState(){return{
   v:1,
-  settings:{shopName:'আমার দোকান',ownerName:'',openingCash:0,pin:'',driveClientID:''},
+  settings:{shopName:'আমার দোকান',ownerName:'',ownerPhone:'',openingCash:0,pin:'',passHash:'',passHint:'',driveClientID:''},
   parties:[],partyTxns:[],
   products:[],sales:[],purchases:[],expenses:[],
   wallets:[
@@ -566,13 +566,50 @@ if(ob>0)toast('হিসাব তৈরি ✅ বাকি '+fmt(ob)+' যো�
 save();closeModal();renderView();return}
 save();closeModal();toast('হিসাব সংরক্ষিত');renderView()}
 function delParty(id){confirmBox('এই হিসাব ও তার সব লেনদেন মুছে যাবে। মুছবেন?',()=>{S.parties=S.parties.filter(p=>p.id!==id);S.partyTxns=S.partyTxns.filter(t=>t.partyId!==id);save();closeModal();renderView()})}
-function openPartyPicker(){if(!S.parties.length){toast('আগে "＋ নতুন হিসাব" দিয়ে গ্রাহক/সাপ্লায়ার যোগ করুন');return openPartyModal()}
-openModal('⚡ কার হিসাবে এন্ট্রি দেবেন?','<input class="inp" id="pp_q" placeholder="🔍 নাম লিখে খুঁজুন" oninput="renderPartyPick()" style="margin-bottom:8px"><div id="pp_list"></div>','');
+function openPartyPicker(mode){cur.pickMode=mode||'due';
+if(!S.parties.length){toast('আগে "＋ নতুন হিসাব" দিয়ে গ্রাহক/সাপ্লায়ার যোগ করুন');return openPartyModal()}
+openModal(cur.pickMode==='statement'?'📄 কার স্টেটমেন্ট দেখবেন?':'⚡ কার হিসাবে এন্ট্রি দেবেন?','<input class="inp" id="pp_q" placeholder="🔍 নাম লিখে খুঁজুন" oninput="renderPartyPick()" style="margin-bottom:8px"><div id="pp_list"></div>','');
 renderPartyPick()}
 function renderPartyPick(){const q=(el('pp_q').value||'').trim();const list=S.parties.filter(p=>!q||p.name.indexOf(q)>=0).slice(0,30);
+const act=cur.pickMode==='statement'?'openStatement':'openDueAdd';
 el('pp_list').innerHTML=list.length?list.map(p=>{const b=partyBal(p.id);const isC=p.type==='cust';
-return '<div class="lrow" onclick="closeModal();openDueAdd(\''+p.id+'\')" style="cursor:pointer"><div class="lt"><b>'+esc(p.name)+(isC?'':' <span class="badge b-org">সাপ্লায়ার</span>')+'</b><small>'+esc(p.phone||'')+'</small></div>'
+return '<div class="lrow" onclick="closeModal();'+act+'(\''+p.id+'\')" style="cursor:pointer"><div class="lt"><b>'+esc(p.name)+(isC?'':' <span class="badge b-org">সাপ্লায়ার</span>')+'</b><small>'+esc(p.phone||'')+'</small></div>'
 +'<div class="rt"><b class="'+(isC?'grn':'red')+'">'+fmt(b)+'</b><small class="mut">'+(isC?'পাবো':'দেবো')+' ›</small></div></div>'}).join(''):'<div class="empty">কেউ পাওয়া যায়নি</div>'}
+
+/* ---------- ব্যক্তির পূর্ণ খাতা স্টেটমেন্ট ---------- */
+function openStatement(id){const p=S.parties.find(x=>x.id===id);if(!p)return;const isC=p.type==='cust';
+const txs=S.partyTxns.filter(t=>t.partyId===id).slice().sort((a,b)=>a.date===b.date?(a.ts||0)-(b.ts||0):(a.date<b.date?-1:1));
+let run=0,td=0,tst=0;
+const rows=txs.map(t=>{let desc='';
+if(t.saleId){const s=S.sales.find(x=>x.id===t.saleId);if(s)desc='বাকি বিক্রয় ('+s.items.map(i=>i.name+' '+bn(i.qty)+' '+i.unit).join(', ')+')'}
+if(!desc)desc=t.note||(t.kind==='due'?(isC?'বাকি দেওয়া হলো':'দেনা হলো'):(isC?'পাওনা পেলাম':'দেনা দিলাম'));
+const due=t.kind==='due'?t.amount:0,set=t.kind==='settle'?t.amount:0;td+=due;tst+=set;run=t2(run+due-set);
+return '<tr><td style="white-space:nowrap">'+fmtDate(t.date)+'</td><td>'+esc(desc)+'</td><td class="r">'+(due?fmt(due):'—')+'</td><td class="r">'+(set?fmt(set):'—')+'</td><td class="r"><b>'+fmt(run)+'</b></td></tr>'}).join('');
+openModal('📄 খাতা স্টেটমেন্ট — '+esc(p.name),
+'<div class="card" style="background:#e9f5f2;margin-bottom:10px"><div class="b3" style="text-align:left">'
++'<div><small>মোট বাকি হয়েছে</small><b class="red">'+fmt(td)+'</b></div>'
++'<div><small>মোট জমা/পরিশোধ</small><b class="grn">'+fmt(tst)+'</b></div>'
++'<div><small>এখন '+(isC?'পাবো':'দেবো')+'</small><b style="font-size:16px">'+fmt(partyBal(id))+'</b></div></div>'
++'<small class="mut">'+(isC?'🔵 গ্রাহক — আমি পাবো':'🔴 সাপ্লায়ার — আমি দেবো')+(p.phone?' • 📞 '+esc(p.phone):'')+'</small></div>'
++(txs.length?'<div style="overflow-x:auto"><table class="tbl"><tr><th>তারিখ</th><th>বিবরণ</th><th class="r">বাকি (+)</th><th class="r">জমা (−)</th><th class="r">চলমান হিসাব</th></tr>'+rows+'</table></div>'
+:'<div class="empty">কোনো লেনদেন নেই</div>'),
+'<button class="btn ghost" onclick="closeModal()">বন্ধ করুন</button><button class="btn" onclick="copyStatement(\''+id+'\')">📋 কপি / শেয়ার করুন</button>')}
+function buildStatementText(id){const p=S.parties.find(x=>x.id===id);if(!p)return '';const isC=p.type==='cust';
+const txs=S.partyTxns.filter(t=>t.partyId===id).slice().sort((a,b)=>a.date===b.date?(a.ts||0)-(b.ts||0):(a.date<b.date?-1:1));
+const L=[S.settings.shopName+' — খাতা স্টেটমেন্ট','নাম: '+p.name+' ('+(isC?'গ্রাহক — আমি পাবো':'সাপ্লায়ার — আমি দেবো')+')'+(p.phone?' • '+p.phone:''),'--------------------------------'];
+let run=0;
+txs.forEach(t=>{run=t2(run+(t.kind==='due'?t.amount:-t.amount));
+let desc=t.note||(t.kind==='due'?'বাকি':'জমা');
+if(t.saleId){const s=S.sales.find(x=>x.id===t.saleId);if(s)desc='বাকি বিক্রয় ('+s.items.map(i=>i.name+' '+bn(i.qty)+' '+i.unit).join(', ')+')'}
+L.push(fmtDate(t.date)+' | '+desc+' | '+(t.kind==='due'?'+':'−')+fmt(t.amount)+' | চলমান '+fmt(run))});
+L.push('--------------------------------');
+L.push('বর্তমানে মোট '+(isC?'পাবো':'দেবো')+': '+fmt(partyBal(id)));
+return L.join('\n')}
+function copyStatement(id){const txt=buildStatementText(id);if(!txt)return;
+const done=()=>toast('স্টেটমেন্ট কপি হয়েছে 📋 যেকোনো জায়গায় পেস্ট/পাঠান করুন');
+try{if(navigator.share){navigator.share({text:txt}).then(()=>{},()=>{try{navigator.clipboard.writeText(txt).then(done,()=>toast('কপি করা যায়নি'))}catch(e){toast('কপি করা যায়নি')}})}
+else if(navigator.clipboard){navigator.clipboard.writeText(txt).then(done,()=>toast('কপি করা যায়নি'))}
+else toast('এই ব্রাউজারে কপি সমর্থিত নয়')}catch(e){toast('কপি করা যায়নি')}}
 function openPartyDetail(id){const p=S.parties.find(x=>x.id===id);if(!p)return;const b=partyBal(id);
 const tx=S.partyTxns.filter(t=>t.partyId===id).slice().reverse().slice(0,25);
 const isCust=p.type==='cust';
@@ -585,7 +622,8 @@ openModal('📒 '+esc(p.name),
 ?'<button class="btn sm" onclick="openSettleModal(\''+id+'\',\'collect\')">✋ পাওনা আদায় পেলাম</button><button class="btn sm ghost" onclick="openDueAdd(\''+id+'\')">＋ নতুন বাকি যোগ</button>'
 :'<button class="btn sm danger" onclick="openSettleModal(\''+id+'\',\'pay\')">💸 দেনা পরিশোধ করলাম</button><button class="btn sm ghost" onclick="openDueAdd(\''+id+'\')">＋ নতুন দেনা যোগ</button>')+'</div>'
 +'<div class="row2"><button class="btn sm warn" onclick="openPartyModal(\''+id+'\')">✏️ এডিট</button><button class="btn sm danger" onclick="delParty(\''+id+'\')">🗑 মুছুন</button></div>'
-+'<h4 class="sec">লেনদেনের ইতিহাস</h4>'
++'<div style="margin:12px 0 4px"><button class="btn" onclick="openStatement(\''+id+'\')">📄 পূর্ণ স্টেটমেন্ট দেখুন — কবে কবে কত বাকি হয়েছে</button></div>'
++'<h4 class="sec">সাম্প্রতিক লেনদেন</h4>'
 +(tx.length?tx.map(t=>'<div class="lrow"><div class="lt"><b>'+(t.kind==='due'?(isCust?'বাকি হলো':'দেনা হলো'):(isCust?'পাওনা পেলাম':'দেনা দিলাম'))+'</b><small>'+fmtDate(t.date)+(t.note?' • '+esc(t.note):'')+'</small></div>'
 +'<b class="'+(t.kind==='due'?'red':'grn')+'">'+(t.kind==='due'?'+':'−')+fmt(t.amount)+'</b></div>').join(''):'<div class="empty">কোনো এন্ট্রি নেই</div>'))}
 function openSettleModal(id,mode){const p=S.parties.find(x=>x.id===id);
@@ -646,6 +684,9 @@ el('view-report').innerHTML=
 +(rc.exp>0?'<div class="lrow"><div class="lt">রিচার্জের খরচ</div><b class="red">−'+fmt(rc.exp)+'</b></div>':'')
 +'<div class="lrow"><div class="lt"><b>রিচার্জ ব্যবসার নিট লাভ</b></div><b class="'+(rc.net>=0?'grn':'red')+'">'+fmt(rc.net)+'</b></div></div>'
 +(cex.length?'<div class="card"><div class="ch">🏠 সাধারণ খরচ</div>'+cex.map(e=>'<div class="lrow"><div class="lt">'+esc(e.title)+'<small>'+fmtDate(e.date)+'</small></div><b class="red">−'+fmt(e.amount)+'</b></div>').join('')+'</div>':'')
++'<div class="card"><div class="ch">📒 ব্যক্তির খাতা স্টেটমেন্ট</div>'
++'<small class="mut" style="display:block;margin-bottom:8px">কোনো গ্রাহক/সাপ্লায়ারের নাম বাছুন — কবে কবে কত টাকা বাকি হলো, কত জমা হলো, চলমান হিসাবসহ পূর্ণ তালিকা পাবেন। দেনাদারকে দেখানোর জন্য কপিও করতে পারবেন।</small>'
++'<button class="btn ghost" onclick="openPartyPicker(\'statement\')">📄 স্টেটমেন্ট দেখুন</button></div>'
 +'<button class="btn ghost" onclick="copyReport()">📋 রিপোর্ট কপি করুন (শেয়ার করার জন্য)</button>'}
 function copyReport(){const r=cur.range;
 const g=statsGrocery(r.from,r.to),m=statsMfs(r.from,r.to),rc=statsRech(r.from,r.to);
@@ -679,8 +720,14 @@ el('view-more').innerHTML='<button class="btn sm ghost" style="margin-bottom:10p
 +'<label class="lbl">দোকানের নাম</label><input class="inp" id="st_shop" value="'+esc(S.settings.shopName)+'">'
 +'<label class="lbl">প্রারম্ভিক নগদ তহবিল ৳ (হাতে এখন যত টাকা আছে)</label><input class="inp" id="st_cash" type="number" inputmode="decimal" value="'+(S.settings.openingCash||0)+'">'
 +'<button class="btn" style="margin-top:10px" onclick="saveBasic()">সংরক্ষণ করুন</button></div>'
-+'<div class="card"><div class="ch">🔐 নিরাপত্তা</div><div class="lrow" style="border:none;padding:0"><div class="lt"><b>PIN লক</b><small>'+(S.settings.pin?'চালু আছে — খোলার সময় PIN লাগবে':'বন্ধ আছে')+'</small></div>'
-+(S.settings.pin?'<button class="btn sm danger" onclick="removePin()">খুলে দিন</button>':'<button class="btn sm" onclick="openPinModal()">চালু করুন</button>')+'</div></div>'
++'<div class="card"><div class="ch">🔐 নিরাপত্তা ও লগইন</div>'
++(S.settings.passHash
+?'<div class="lrow" style="border:none;padding:0 0 8px"><div class="lt"><b>লগইন সিস্টেম চালু ✓</b><small>রেজিস্টার্ড: '+esc(S.settings.ownerPhone)+(S.settings.ownerName?' • '+esc(S.settings.ownerName):'')+'</small></div></div>'
++'<div class="row2"><button class="btn sm ghost" onclick="openChangePass()">🔑 পাসওয়ার্ড বদলান</button><button class="btn sm danger" onclick="disableLogin()">লগইন বন্ধ করুন</button></div>'
+:(S.settings.pin
+?'<div class="lrow" style="border:none;padding:0 0 8px"><div class="lt"><b>PIN লক চালু আছে (পুরনো)</b><small>নতুন লগইন সিস্টেমে আপগ্রেড করুন — মোবাইল নম্বর + পাসওয়ার্ড</small></div></div><button class="btn sm" onclick="openRegModal()">⬆️ আপগ্রেড করুন</button>'
+:'<div class="lrow" style="border:none;padding:0 0 8px"><div class="lt"><b>লগইন সিস্টেম</b><small>বন্ধ আছে — চালু করলে অ্যাপ খুলতে আপনার মোবাইল নম্বর ও পাসওয়ার্ড লাগবে, অন্য কেউ হিসাব দেখতে পারবে না</small></div></div><button class="btn sm" onclick="openRegModal()">🔐 লগইন চালু করুন</button>'))
++'</div>'
 +'<div class="card"><div class="ch">💸 ব্যাংকিং কমিশন রেট <small class="mut" style="font-weight:400">(প্রতি ১০০০ টাকায়)</small></div>'
 +S.wallets.map(w=>'<div style="border-bottom:1px solid #edf4f2;padding:8px 0"><b style="font-size:14px">'+esc(w.name)+'</b>'
 +'<div class="row3" style="margin-top:5px"><div><label class="lbl">ক্যাশ ইন</label><input class="inp" id="rt_'+w.key+'_ci" type="number" inputmode="decimal" value="'+w.ci+'"></div>'
@@ -732,22 +779,68 @@ function delOp(key){if(S.rechTxns.some(t=>t.op===key))return toast('এই অ�
 confirmBox('এই অপারেটর মুছে ফেলবেন?',()=>{S.operators=S.operators.filter(o=>o.key!==key);save();renderView()})}
 
 /* ================= পিন লক ================= */
-function openPinModal(){openModal('🔐 PIN সেট করুন (৪ সংখ্যা)',
-'<label class="lbl">নতুন PIN</label><input class="inp" id="pn1" type="password" inputmode="numeric" maxlength="4">'
-+'<label class="lbl">আবার লিখুন</label><input class="inp" id="pn2" type="password" inputmode="numeric" maxlength="4">',
-'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="savePin()">চালু করুন</button>')}
-function savePin(){const a=el('pn1').value,b=el('pn2').value;
-if(!/^\d{4}$/.test(a))return toast('৪ সংখ্যার PIN দিন');
-if(a!==b)return toast('দুটো PIN মিলছে না');
-S.settings.pin=a;save();closeModal();toast('PIN লক চালু ✅');renderView()}
-function removePin(){confirmBox('PIN লক খুলে দেবেন?',()=>{S.settings.pin='';save();toast('PIN লক বন্ধ');renderView()})}
-function showLock(){el('lockRoot').innerHTML='<div class="lockback"><div style="font-size:52px">🔐</div>'
+/* ================= লগইন ও নিরাপত্তা ================= */
+function sHash(s){let h=5381;for(let i=0;i<s.length;i++){h=(((h<<5)+h)+s.charCodeAt(i))>>>0}return 'h'+h.toString(16)}
+function showLock(){const L=el('lockRoot');
+if(S.settings.passHash){
+L.innerHTML='<div class="lockback" style="padding:16px"><div style="font-size:48px">🔐</div>'
++'<h2 style="margin:6px 0 2px;font-size:22px">'+esc(S.settings.shopName)+'</h2>'
++'<small style="opacity:.85;margin-bottom:12px">লগইন করে ঢুকুন</small>'
++'<input class="inp" id="lg_phone" inputmode="tel" placeholder="রেজিস্টার্ড মোবাইল নম্বর" style="max-width:280px;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:#fff">'
++'<input class="inp" id="lg_pass" type="password" placeholder="পাসওয়ার্ড" style="max-width:280px;margin-top:8px;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:#fff" onkeydown="if(event.key===\'Enter\')tryLogin()">'
++'<button class="btn" style="max-width:280px;margin-top:10px" onclick="tryLogin()">🔓 খুলুন</button>'
++'<button style="background:none;border:none;color:#cfe9e5;text-decoration:underline;font-family:inherit;font-size:13px;margin-top:12px;cursor:pointer" onclick="showForgot()">পাসওয়ার্ড ভুলে গেছেন?</button>'
++'<small style="opacity:.7;margin-top:18px;font-size:11.5px;max-width:300px;text-align:center">🔒 আপনার হিসাব শুধু আপনার ফোনেই সংরক্ষিত থাকে। অন্য কারো ফোনে এই লিংক খুললে তার অ্যাপ ফাঁকা দেখাবে।</small></div>';
+setTimeout(()=>{try{el('lg_phone').focus()}catch(e){}},80)}
+else{
+L.innerHTML='<div class="lockback"><div style="font-size:52px">🔐</div>'
 +'<h2 style="margin:8px 0 4px">'+esc(S.settings.shopName)+'</h2><small style="opacity:.8;margin-bottom:4px">খুলতে PIN দিন</small>'
 +'<input class="inp" id="lockPin" type="password" inputmode="numeric" maxlength="4" style="max-width:180px;text-align:center;font-size:22px;letter-spacing:8px;margin:10px 0;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff" oninput="chkLock()">'
 +'<button class="btn" style="max-width:180px" onclick="chkLock()">খুলুন</button></div>';
-setTimeout(()=>{try{el('lockPin').focus()}catch(e){}},80)}
+setTimeout(()=>{try{el('lockPin').focus()}catch(e){}},80)}}
 function chkLock(){const v=el('lockPin').value;if(v.length<4)return;
 if(v===S.settings.pin){el('lockRoot').innerHTML='';toast('স্বাগতম! 🙏')}else{toast('ভুল PIN');el('lockPin').value=''}}
+function tryLogin(){const ph=(el('lg_phone').value||'').replace(/\D/g,'');const stored=(S.settings.ownerPhone||'').replace(/\D/g,'');
+if(!ph||!el('lg_pass').value)return toast('মোবাইল নম্বর ও পাসওয়ার্ড দিন');
+if(ph!==stored)return toast('এই নম্বরটি রেজিস্টার্ড নয়');
+if(sHash(el('lg_pass').value)!==S.settings.passHash)return toast('ভুল পাসওয়ার্ড');
+el('lockRoot').innerHTML='';toast('স্বাগতম'+(S.settings.ownerName?', '+S.settings.ownerName:'')+' 🙏')}
+function showForgot(){el('lockRoot').innerHTML='<div class="lockback" style="padding:16px"><div style="font-size:44px">🤔</div>'
++'<h2 style="margin:6px 0 4px;font-size:20px">পাসওয়ার্ড রিকভারি</h2>'
++'<small style="opacity:.85;margin-bottom:6px">আপনার সেট করা হিন্ট:</small>'
++'<div style="background:rgba(255,255,255,.15);border-radius:10px;padding:10px 16px;max-width:300px;font-size:15px;margin-bottom:6px">'+esc(S.settings.passHint||'কোনো হিন্ট সেট করা নেই')+'</div>'
++'<button class="btn" style="max-width:280px;margin-top:10px" onclick="showLock()">↩ আবার চেষ্টা করুন</button>'
++'<button id="rstBtn" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#ffd9d9;border-radius:10px;padding:9px 18px;font-family:inherit;font-size:13px;margin-top:10px;cursor:pointer" onclick="resetFromLock()">সব ডেটা মুছে রিসেট করুন</button>'
++'<small style="opacity:.7;margin-top:16px;font-size:11.5px;max-width:300px;text-align:center">⚠️ রিসেট করলে সব হিসাব মুছে যাবে — গুগল ড্রাইভে ব্যাকআপ থাকলে পরে ফিরিয়ে আনা যাবে।</small></div>'}
+function resetFromLock(){const b=el('rstBtn');
+if(!b.dataset.arm){b.dataset.arm='1';b.textContent='⚠️ নিশ্চিত? আবার চাপলে সব মুছে যাবে';return}
+S=freshState();if(canStore){try{localStorage.setItem(LSKEY,JSON.stringify(S))}catch(e){}}
+location.reload()}
+function openRegModal(){openModal('🔐 লগইন সিস্টেম চালু করুন',
+'<small class="mut" style="display:block;margin-bottom:8px">চালু করলে প্রতিবার অ্যাপ খুলতে আপনার রেজিস্টার্ড মোবাইল নম্বর ও পাসওয়ার্ড লাগবে — অন্য কেউ খুলে হিসাব দেখতে পারবে না।</small>'
++'<label class="lbl">আপনার নাম</label><input class="inp" id="rg_name" value="'+esc(S.settings.ownerName||'')+'">'
++'<label class="lbl">রেজিস্টার্ড মোবাইল নম্বর *</label><input class="inp" id="rg_phone" inputmode="tel" placeholder="01XXXXXXXXX">'
++'<div class="row2"><div><label class="lbl">পাসওয়ার্ড * (কমপক্ষে ৪ অক্ষর)</label><input class="inp" id="rg_pass" type="password"></div>'
++'<div><label class="lbl">আবার লিখুন *</label><input class="inp" id="rg_pass2" type="password"></div></div>'
++'<label class="lbl">পাসওয়ার্ড হিন্ট (ভুলে গেলে মনে করার জন্য)</label><input class="inp" id="rg_hint" placeholder="যেমন: আমার প্রথম মোবাইল নম্বর">',
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveReg()">✅ চালু করুন</button>')}
+function saveReg(){const name=el('rg_name').value.trim();const phone=(el('rg_phone').value||'').replace(/\D/g,'');
+const p1=el('rg_pass').value,p2=el('rg_pass2').value;
+if(phone.length<10)return toast('সঠিক মোবাইল নম্বর দিন (01XXXXXXXXX)');
+if(p1.length<4)return toast('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের দিন');
+if(p1!==p2)return toast('দুটো পাসওয়ার্ড মিলছে না');
+S.settings.ownerName=name;S.settings.ownerPhone=phone;S.settings.passHash=sHash(p1);S.settings.passHint=el('rg_hint').value.trim();S.settings.pin='';
+save();closeModal();toast('লগইন সিস্টেম চালু ✅ পরের বার খুলতে নম্বর ও পাসওয়ার্ড লাগবে');renderView()}
+function openChangePass(){openModal('🔑 পাসওয়ার্ড বদলান',
+'<label class="lbl">বর্তমান পাসওয়ার্ড *</label><input class="inp" id="cp_old" type="password">'
++'<label class="lbl">নতুন পাসওয়ার্ড *</label><input class="inp" id="cp_new" type="password">'
++'<label class="lbl">আবার লিখুন *</label><input class="inp" id="cp_new2" type="password">',
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveChangePass()">সংরক্ষণ</button>')}
+function saveChangePass(){if(sHash(el('cp_old').value)!==S.settings.passHash)return toast('বর্তমান পাসওয়ার্ড ভুল');
+const n=el('cp_new').value;if(n.length<4)return toast('নতুন পাসওয়ার্ড কমপক্ষে ৪ অক্ষর');
+if(n!==el('cp_new2').value)return toast('নতুন পাসওয়ার্ড দুটো মিলছে না');
+S.settings.passHash=sHash(n);save();closeModal();toast('পাসওয়ার্ড বদলে গেছে ✅')}
+function disableLogin(){confirmBox('লগইন সিস্টেম বন্ধ করবেন? তখন অ্যাপ সরাসরি খুলবে।',()=>{S.settings.passHash='';S.settings.ownerPhone='';save();renderView();toast('লগইন বন্ধ করা হলো')})}
 
 /* ================= কুইক অ্যাড (+ বাটন) ================= */
 function openQuickAdd(){openModal('＋ কী করতে চান?',
@@ -832,7 +925,8 @@ const total=t2(items.reduce((s,i)=>s+i.sell*i.qty,0));const cost=t2(items.reduce
 const due=t2(Math.max(0,total-paid));const id=uid();
 S.sales.push({id:id,ts:Date.now(),date:date,items:items,total:total,cost:cost,profit:t2(total-cost),paid:t2(paid),due:due,partyId:partyId||''});
 if(partyId&&due>0)S.partyTxns.push({id:uid(),ts:Date.now(),date:date,partyId:partyId,kind:'due',amount:due,cash:0,note:'বাকি বিক্রয়',saleId:id})}
-function loadDemo(silent){S=freshState();const st=S.settings;
+function loadDemo(silent){const keep={passHash:S.settings.passHash,ownerPhone:S.settings.ownerPhone,passHint:S.settings.passHint,pin:S.settings.pin,ownerName:S.settings.ownerName,driveClientID:S.settings.driveClientID};
+S=freshState();Object.assign(S.settings,keep);const st=S.settings;
 st.shopName='ডেমো মুদি ষ্টোর';st.openingCash=5000;
 [['চাল (মিনিকেট)','কেজি',68,74,50,10],['চিনি','কেজি',118,128,20,5],['সয়াবিন তেল ৫ লিটার','পিস',810,860,12,3],
 ['ডিম','হালি',12,14,100,30],['মেরিন বিস্কুট','প্যাকেট',10,12,40,10],['তোয়ালে সাবান','পিস',35,40,18,5],
@@ -877,7 +971,7 @@ function resetAll(){confirmBox('⚠️ সব ডেটা মুছে ফে�
 
 /* ================= চালু ================= */
 function init(){el('h_store').textContent=canStore?'সেভ চালু ✓':'প্রিভিউ';
-if(S.settings.pin)showLock();
+if(S.settings.passHash||S.settings.pin)showLock();
 go('home');
 if('serviceWorker' in navigator&&location.protocol==='https:'){try{navigator.serviceWorker.register('sw.js').catch(function(){})}catch(e){}}}
 init();
