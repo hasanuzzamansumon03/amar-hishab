@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>আমার হিসাব — সম্পূর্ণ সেটআপ ও ব্যবহার গাইডলাইন (১০০% ফ্রি)</title>
+<style>
+:root{--g1:#00897b;--g2:#00564c;--grn:#2e7d32;--red:#c62828;--ink:#17302b;--mut:#5f7772;--bg:#f2f7f6;--line:#d7e5e2}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans Bengali','Hind Siliguri','SolaimanLipi',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.75;font-size:16px}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 60px}
+header.top{background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border-radius:18px;padding:26px 22px;margin-bottom:22px}
+header.top h1{font-size:26px;margin-bottom:6px}
+header.top p{opacity:.92;font-size:14.5px}
+.badge{display:inline-block;background:rgba(255,255,255,.2);border-radius:20px;padding:3px 12px;font-size:12.5px;margin:10px 4px 0 0}
+h2{font-size:21px;margin:34px 0 10px;padding:10px 14px;background:linear-gradient(90deg,#e0f2f0,transparent);border-left:5px solid var(--g1);border-radius:0 10px 10px 0}
+h3{font-size:17px;margin:20px 0 8px;color:var(--g2)}
+p{margin:8px 0}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:12px 0;box-shadow:0 1px 4px rgba(20,80,70,.06)}
+.step{display:flex;gap:12px;margin:14px 0}
+.step .n{flex:none;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+.step .b{flex:1}
+.step .b b{display:block;margin-bottom:2px}
+ol,ul{margin:8px 0 8px 24px}
+li{margin:5px 0}
+.btn-demo{display:inline-block;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border-radius:10px;padding:7px 16px;font-weight:700;font-size:13.5px;box-shadow:0 2px 6px rgba(0,110,95,.3)}
+.warn{background:#fff8e6;border:1px solid #f0db9c;border-radius:12px;padding:12px 15px;margin:12px 0}
+.good{background:#e9f6ec;border:1px solid #bfe3c6;border-radius:12px;padding:12px 15px;margin:12px 0}
+.info{background:#e7f3f7;border:1px solid #bcdcea;border-radius:12px;padding:12px 15px;margin:12px 0}
+code,.path{background:#eaf2f0;border-radius:6px;padding:1px 7px;font-size:14px;font-family:Consolas,monospace;color:#0b4f45}
+table{width:100%;border-collapse:collapse;font-size:14.5px;margin:10px 0;background:#fff;border-radius:10px;overflow:hidden}
+th{background:var(--g1);color:#fff;text-align:left;padding:9px 12px;font-size:14px}
+td{padding:9px 12px;border-bottom:1px solid #e6efec;vertical-align:top}
+tr:last-child td{border-bottom:none}
+.toc{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+.toc a{color:var(--g1);text-decoration:none;font-weight:600}
+.toc a:hover{text-decoration:underline}
+.toc li{margin:7px 0}
+.kbd{border:1.5px solid #c7d6d2;border-bottom-width:3px;border-radius:7px;padding:1px 8px;background:#fff;font-size:13.5px;white-space:nowrap}
+svg{max-width:100%;height:auto;display:block;margin:10px auto}
+.q{background:#f7fbfa;border:1px dashed #b9d4ce;border-radius:10px;padding:10px 14px;margin:10px 0}
+.q b{color:var(--g2)}
+footer{margin-top:44px;text-align:center;color:var(--mut);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+.num{color:var(--red);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="good" style="margin-top:14px">📱 <b>শুধু মোবাইল দিয়েই সব সেটআপ করতে চান?</b> তাহলে <b>mobile-setup.html</b> ফাইলটি খুলুন — কম্পিউটার ছাড়া ধাপে ধাপে সম্পূর্ণ সেটআপের আলাদা গাইড ওখানে আছে।</div>
+
+<header class="top">
+<h1>📒 আমার হিসাব</h1>
+<p>মুদি দোকান • মোবাইল ব্যাংকিং • মোবাইল রিচার্জ — তিন ব্যবসার সম্পূর্ণ হিসাব, এক অ্যাপে</p>
+<span class="badge">✅ ১০০% ফ্রি</span><span class="badge">🚫 বিজ্ঞাপন নেই</span><span class="badge">📴 অফলাইনে চলে</span><span class="badge">☁️ ব্যাকআপ যাবে আপনার নিজের গুগল ড্রাইভে</span>
+</header>
+
+<div class="toc">
+<b>📑 এই গাইডে যা যা আছে:</b>
+<ol>
+<li><a href="#intro">পরিকল্পনা ও বিশ্লেষণ — কেন এই পদ্ধতিতে বানানো হলো</a></li>
+<li><a href="#step1">ধাপ ১ — এখনই ব্যবহার শুরু করুন (৫ মিনিট)</a></li>
+<li><a href="#step2">ধাপ ২ — ফ্রিতে অনলাইনে ছাড়ুন / Netlify (৫ মিনিট)</a></li>
+<li><a href="#step3">ধাপ ৩ — ফোনের হোম স্ক্রিনে অ্যাপের মতো বসান</a></li>
+<li><a href="#step4">ধাপ ৪ — প্রথমবার সেটআপ (রেট, ব্যালান্স, দোকানের নাম)</a></li>
+<li><a href="#step5">ধাপ ৫ — গুগল ড্রাইভে ব্যাকআপ (ম্যানুয়াল + অটো)</a></li>
+<li><a href="#routine">প্রতিদিনের ব্যবহারের নিয়ম (রুটিন)</a></li>
+<li><a href="#extra">কোন ফিচার কোথায় + এক্সট্রা যা যোগ করা হয়েছে</a></li>
+<li><a href="#future">ভবিষ্যতে কী কী যোগ করা যাবে</a></li>
+<li><a href="#alt">বিকল্প ফ্রি পথ — Google AppSheet</a></li>
+<li><a href="#play">প্লে-স্টোরে দিতে চাইলে</a></li>
+<li><a href="#faq">সাধারণ সমস্যা ও সমাধান (FAQ)</a></li>
+</ol>
+</div>
+
+<!-- ================================================================ -->
+<h2 id="intro">১. 🔍 পরিকল্পনা ও বিশ্লেষণ — কেন এই পদ্ধতি</h2>
+<div class="card">
+<p>আপনার চাহিদা অনুযায়ী আমি <b>৩টি আলাদা ব্যবসার হিসাব</b> এক অ্যাপে বানিয়েছি — প্রতিটির লাভ-ক্ষতি আলাদা, আবার মোট লাভ-ক্ষতিও একসাথে দেখা যায়:</p>
+<table>
+<tr><th>আপনার চাহিদা</th><th>অ্যাপে যেভাবে হয়েছে</th></tr>
+<tr><td>টালি খাতার মতো পাবো-দেবো খাতা</td><td>📒 <b>খাতা</b> ট্যাব — গ্রাহক/সাপ্লায়ার আলাদা, বাকি বিক্রয় করলে অটো খাতায় যোগ হয়, এসএমএস রিমাইন্ডার সহ</td></tr>
+<tr><td>স্টক + ক্রয় মূল্য + বিক্রয় মূল্য + পরিমাণ</td><td>📦 মুদি → স্টক ট্যাব — প্রতিটি পণ্যের ক্রয়/বিক্রয় মূল্য, মোট স্টকের মূল্য, সম্ভাব্য লাভ, কম স্টক অ্যালার্ট</td></tr>
+<tr><td>দৈনিক/সাপ্তাহিক/মাসিক/বার্ষিক আয়-ব্যয়-লাভ-ক্ষতি</td><td>📊 রিপোর্ট ট্যাব — আজ/গতকাল/সপ্তাহ/মাস/বছর/নিজের পছন্দের তারিখ</td></tr>
+<tr><td>বিকাশ/নগদ/রকেটের আলাদা হিসাব</td><td>💸 মোবাইল ট্যাব — প্রতিটি ওয়ালেটের আলাদা ব্যালান্স, আলাদা কমিশন, আলাদা লাভ</td></tr>
+<tr><td>জিপি/রবি/বাংলালিংক/টেলিটকের আলাদা হিসাব</td><td>📶 মোবাইল ট্যাব — প্রতি অপারেটরের আলাদা ব্যালান্স, আলাদা কমিশন রেট ও আলাদা কমিশন আয়</td></tr>
+<tr><td>হাজারে কত কমিশন — নিজে সেট করা</td><td>⚙️ সেটিংস — প্রতি ওয়ালেটে ক্যাশ ইন/আউট/সেন্ড ফি রেট, প্রতি অপারেটরে রিচার্জ রেট। টাকা লেখামাত্র কমিশন অটো হিসাব হয়</td></tr>
+<tr><td>মোট লাভে কোন ব্যবসা থেকে কত এলো</td><td>📊 রিপোর্টের প্রথম কার্ড — ৩ ব্যবসার পাশাপাশি তুলনা (বার চার্টসহ)</td></tr>
+<tr><td>গুগল ড্রাইভে ক্লাউড স্টোরেজ</td><td>☁️ এক ট্যাপে আপনার নিজের ড্রাইভে ব্যাকআপ ও রিস্টোর (ধাপ ৫ দেখুন)</td></tr>
+</table>
+</div>
+
+<h3>এটি কীভাবে কাজ করে (সহজ ভাষায়)</h3>
+<div class="card">
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" style="font-family:sans-serif">
+<defs><linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00897b"/><stop offset="1" stop-color="#00564c"/></linearGradient></defs>
+<rect x="10" y="60" width="200" height="180" rx="16" fill="url(#gr)"/>
+<text x="110" y="95" fill="#fff" font-size="17" font-weight="bold" text-anchor="middle">📱 আপনার ফোন</text>
+<text x="110" y="125" fill="#d2f0ec" font-size="12.5" text-anchor="middle">অ্যাপের সব ডেটা এখানেই</text>
+<text x="110" y="147" fill="#d2f0ec" font-size="12.5" text-anchor="middle">নিরাপদে সেভ থাকে</text>
+<text x="110" y="175" fill="#fff" font-size="13" text-anchor="middle">🛒 মুদি 💸 ব্যাংকিং 📶 রিচার্জ</text>
+<text x="110" y="200" fill="#fff" font-size="13" text-anchor="middle">📒 খাতা 📊 রিপোর্ট</text>
+<text x="110" y="225" fill="#9fd8d1" font-size="11.5" text-anchor="middle">ইন্টারনেট ছাড়াও চলে</text>
+<path d="M220 150 C 280 150, 300 150, 360 150" stroke="#00897b" stroke-width="3" stroke-dasharray="7 6" fill="none" marker-end="url(#ar)"/>
+<defs><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z" fill="#00897b"/></marker></defs>
+<text x="290" y="132" fill="#00695c" font-size="12" text-anchor="middle">ব্যাকআপ / রিস্টোর</text>
+<rect x="370" y="60" width="200" height="180" rx="16" fill="#fff" stroke="#cfe3df" stroke-width="2"/>
+<text x="470" y="95" fill="#1a73e8" font-size="17" font-weight="bold" text-anchor="middle">☁️ গুগল ড্রাইভ</text>
+<text x="470" y="125" fill="#5f7772" font-size="12.5" text-anchor="middle">আপনার নিজের অ্যাকাউন্ট</text>
+<text x="470" y="147" fill="#5f7772" font-size="12.5" text-anchor="middle">amar-hishab-backup.json</text>
+<text x="470" y="175" fill="#5f7772" font-size="12" text-anchor="middle">ফোন হারালে/পরিবর্তন করলে</text>
+<text x="470" y="195" fill="#5f7772" font-size="12" text-anchor="middle">এখান থেকেই সব ফিরে পাবেন</text>
+<text x="470" y="222" fill="#1a73e8" font-size="12.5" font-weight="bold" text-anchor="middle">15 GB পর্যন্ত সম্পূর্ণ ফ্রি</text>
+<rect x="600" y="95" width="105" height="110" rx="14" fill="#fff" stroke="#cfe3df" stroke-width="2"/>
+<text x="652" y="125" font-size="15" text-anchor="middle">🌐</text>
+<text x="652" y="150" fill="#17302b" font-size="12" font-weight="bold" text-anchor="middle">Netlify</text>
+<text x="652" y="170" fill="#5f7772" font-size="11" text-anchor="middle">ফ্রি হোস্টিং</text>
+<text x="652" y="188" fill="#5f7772" font-size="11" text-anchor="middle">(ধাপ ২)</text>
+<path d="M580 150 C 590 150, 592 150, 598 150" stroke="#90a8a2" stroke-width="2" stroke-dasharray="4 4"/>
+</svg>
+<p><b>গুরুত্বপূর্ণ কথা:</b> টালি খাতার মতো প্রিমিয়াম ফি নেই, কোনো সাবস্ক্রিপশন নেই। এটি একটি <b>PWA (প্রগ্রেসিভ ওয়েব অ্যাপ)</b> — একবার ফোনে বসালে দেখতে ও চলতে হুবহু অ্যান্ড্রয়েড অ্যাপের মতোই লাগবে (নিজস্ব আইকন, ফুলস্ক্রিন, ইন্টারনেট ছাড়াই চলে), কিন্তু বানাতে ও চালাতে <span class="num">০ টাকা</span> খরচ।</p>
+</div>
+
+<div class="info"><b>📁 ফাইল তালিকা (আপনার জন্য যা তৈরি করা হয়েছে):</b>
+<ul>
+<li><span class="path">index.html</span> — মূল অ্যাপ (পুরো অ্যাপটি এই একটি ফাইলের ভেতরে)</li>
+<li><span class="path">manifest.webmanifest</span> + <span class="path">sw.js</span> + <span class="path">icon-192.png</span> + <span class="path">icon-512.png</span> — অ্যাপ আইকন ও অফলাইনে চালানোর ফাইল</li>
+<li><span class="path">guideline.html</span> — এই গাইড (যা এখন পড়ছ্ন)</li>
+</ul>
+</div>
+
+<!-- ================================================================ -->
+<h2 id="step1">২. 🚀 ধাপ ১ — এখনই ব্যবহার শুরু করুন (৫ মিনিট)</h2>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>অ্যাপ ফাইলটি ডাউনলোড করুন</b>
+এই কথোপকথনের ফাইল তালিকা থেকে <span class="path">amar-hishab</span> ফোল্ডারের <span class="path">index.html</span> (এবং বাকি ফাইলগুলোও) ফোনে বা কম্পিউটারে ডাউনলোড করে নিন। ফোনের একটি ফোল্ডারে (যেমন: <i>Download/amar-hishab</i>) রাখুন।</div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>ফোনে খুলুন</b>
+ফোনের <b>Files</b> অ্যাপ → <span class="path">index.html</span> ফাইলটি পান → খুলতে <b>Chrome</b> বাছুন ("Always/সবসময়" চিহ্নিত করলে পরে এক ট্যাপেই খুলবে)। ব্যস! অ্যাপ চালু।</div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>ডেমো ডেটা দেখে নিন</b>
+⚙️ আরও → সেটিংস → "ডেমো ডেটা দেখুন" চাপলে নমুনা হিসাব লোড হবে — ঘুরে ঘুরে সব ফিচর বুঝে নিন। পরে "সব ডেটা মুছুন" দিয়ে নিজের আসল হিসাব শুরু করবেন।</div></div>
+</div>
+<div class="warn">⚠️ <b>শুধু ধাপ ১-এ থেমে থাকলে ঝুঁকি:</b> ফোনের ব্রাউজারের ডেটা মুছলে (বা "site settings" clear করলে) হিসাব মুছে যেতে পারে। তাই <b>ধাপ ২ ও ৩ অবশ্যই করুন</b> — তাতে অ্যাপ স্থায়ীভাবে বসে যাবে এবং প্রতিটি এন্ট্রি নিরাপদে সেভ হবে।</div>
+
+<!-- ================================================================ -->
+<h2 id="step2">৩. 🌐 ধাপ ২ — ফ্রিতে অনলাইনে ছাড়ুন (Netlify Drop, ৫ মিনিট)</h2>
+<p>এর সুবিধা: ① অ্যাপটি হোম স্ক্রিনে "ইনস্টল" করা যাবে, ② গুগল ড্রাইভে অটো-ব্যাকআপ চালু করা যাবে, ③ লিংক দিয়ে যেকোনো ডিভাইসে ঢোকা যাবে।</p>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>Netlify খুলুন</b>
+ব্রাউজারে যান: <span class="path">app.netlify.com/drop</span> — সম্পূর্ণ ফ্রি, কার্ড লাগে না।</div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>ফোল্ডারটি টেনে ছেড়ে দিন (Drag &amp; Drop)</b>
+<span class="path">amar-hishab</span> ফোল্ডারটি (যার ভেতর index.html আছে) পুরোটা মাউস/আঙুল দিয়ে টেনে পেজের ড্রপ-এলাকায় ছেড়ে দিন।</div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>আপনার নিজের ঠিকানা (URL) পেয়ে গেলেন!</b>
+কয়েক সেকেন্ডে এমন একটি লিংক পাবেন: <span class="path">https://আপনার-নাম.netlify.app</span> — এটিই এখন থেকে আপনার অ্যাপের ঠিকানা। বুকমার্ক করে রাখুন।</div></div>
+<div class="step"><div class="n">৪</div><div class="b"><b>ফ্রি অ্যাকাউন্ট খুলে রাখুন (পরামর্শ)</b>
+গুগল দিয়ে সাইন-আপ করলে সাইটটি স্থায়ীভাবে আপনার থাকবে এবং পরে ফাইল আপডেট করা যাবে। (অ্যাকাউন্ট না খুললেও সাইট চলবে, তবে ১ দিন পর ম্যানেজ করা যায় না।)</div></div>
+</div>
+<p><b>বিকল্প (কারও পছন্দ হলে):</b> <span class="path">GitHub Pages</span> — github.com এ ফ্রি অ্যাকাউন্ট → নতুন Repository → ফাইলগুলো Upload → Settings → Pages → Branch: main → Save। ঠিকানা পাবেন <span class="path">username.github.io/repo-name</span>।</p>
+<div class="good">💡 <b>দুই ভাবেই ব্যবহার করতে পারবেন:</b> হোস্ট করা লিংক থেকে (ইন্টারনেট লাগে প্রথমবার, পরে অফলাইনেও চলে) অথবা ফাইল থেকে সরাসরি। তবে <b>একটাই বেছে নিয়ে সেটাতেই সব হিসাব রাখুন</b> — দুই জায়গার ডেটা এক হয় না।</p></div>
+
+<!-- ================================================================ -->
+<h2 id="step3">৪. 📲 ধাপ ৩ — ফোনের হোম স্ক্রিনে অ্যাপের মতো বসান</h2>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>Chrome-এ আপনার অ্যাপের লিংকটি খুলুন</b></div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>মেনু খুলুন</b> — Chrome-এর উপরে-ডানে <b>⋮</b> (তিন ডট) চাপুন।</div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>"Add to Home screen" / "অ্যাপ ইনস্টল করুন" / "Install app"</b> চাপুন → নাম ঠিক করুন → <b>Add / Install</b>।</div></div>
+<div class="step"><div class="n">৪</div><div class="b"><b>ব্যস!</b> হোম স্ক্রিনে <span class="btn-demo">📒 আমার হিসাব</span> আইকন বসে গেছে — এখন থেকে যেকোনো অ্যাপের মতো এক ট্যাপে খুলবে, ফুলস্ক্রিনে চলবে, ইন্টারনেট ছাড়াও চলবে।</div></div>
+</div>
+
+<!-- ================================================================ -->
+<h2 id="step4">৫. ⚙️ ধাপ ৪ — প্রথমবার সেটআপ (একবারই করতে হবে)</h2>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>দোকানের নাম ও হাতের নগদ</b>
+আরও → সেটিংস → দোকানের নাম লিখুন; "প্রারম্ভিক নগদ তহবিল"-এ আজ হাতে/ড্রয়ারে যত টাকা আছে তা দিন → সংরক্ষণ। এটাই নগদ হিসাবের শুরু।</div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>ব্যাংকিং কমিশন রেট বসান (খুব গুরুত্বপূর্ণ)</b>
+সেটিংসে প্রতিটি ওয়ালেটের জন্য <b>প্রতি ১০০০ টাকায়</b> আপনার কমিশন বসান — যেমন বিকাশ ক্যাশ ইন ১৮৳, নগদ ক্যাশ আউট ১০৳ ইত্যাদি (আপনার এজেন্সির চুক্তি অনুযায়ী)। সেন্ড মানির ফি-ও বসান। ডিফল্ট রেট অনুমান করে দেওয়া — <b>অবশ্যই নিজের মতো ঠিক করে নিন।</b></div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>রিচার্জ কমিশন রেট বসান</b>
+একই জায়গায় প্রতি অপারেটরের হাজার-প্রতি রেট বসান (যেমন জিপি ৩০৳)। চাইলে নতুন অপারেটর/ওয়ালেটও যোগ করতে পারবেন।</div></div>
+<div class="step"><div class="n">৪</div><div class="b"><b>বর্তমান ব্যালান্স বসান</b>
+"প্রারম্ভিক ব্যালান্স"-এ প্রতিটি ওয়ালেট ও অপারেটরে এখন যত টাকা আছে তা দিন → "সব রেট ও ব্যালান্স সংরক্ষণ"।</div></div>
+<div class="step"><div class="n">৫</div><div class="b"><b>পণ্য যোগ করুন</b>
+মুদি → স্টক ট্যাব → "＋ নতুন পণ্য" — নাম, একক, ক্রয় মূল্য, বিক্রয় মূল্য, দোকানে যত আছে। ব্যবসা শুরু!</div></div>
+<div class="step"><div class="n">৬</div><div class="b"><b>(ঐচ্ছিক) PIN লক চালু করুন</b>
+সেটিংস → নিরাপত্তা → ৪ সংখ্যার PIN — অন্য কেউ অ্যাপ খুলে হিসাব দেখতে পারবে না।</div></div>
+</div>
+
+<!-- ================================================================ -->
+<h2 id="step5">৬. ☁️ ধাপ ৫ — গুগল ড্রাইভে ব্যাকআপ (আপনার নিজের ক্লাউড)</h2>
+
+<h3>পদ্ধতি ক — ম্যানুয়াল ব্যাকআপ (সবার জন্য, সবচেয়ে সহজ)</h3>
+<div class="card">
+<ol>
+<li>অ্যাপে যান: <b>আরও → ব্যাকআপ ও রিস্টোর → "⬇️ ব্যাকআপ ফাইল ডাউনলোড"</b> — একটি ফাইল নামবে <span class="path">amar-hishab-backup-তারিখ.json</span></li>
+<li>ফোনের <b>গুগল ড্রাইভ অ্যাপ</b> খুলুন → <b>＋ (New/নতুন)</b> → <b>Upload/আপলোড</b> → ওই ফাইলটি দিন।</li>
+<li>ফিরিয়ে আনতে (নতুন ফোনে/মুছে গেলে): ড্রাইভ থেকে ফাইলটি ডাউনলোড করুন → অ্যাপে <b>"⬆️ ব্যাকআপ থেকে ফিরিয়ে আনুন"</b> → ফাইলটি বাছুন। সব হিসাব হুবহু ফিরে আসবে।</li>
+</ol>
+<p>🗓️ <b>নিয়ম:</b> সপ্তাহে অন্তত একবার + মাস শেষে অবশ্যই। মাত্র ৩০ সেকেন্ড লাগে।</p>
+</div>
+
+<h3>পদ্ধতি খ — অটো ব্যাকআপ (এক ট্যাপে, একবার সেটআপ লাগে)</h3>
+<p>এতে অ্যাপের ভেতর থেকেই সরাসরি আপনার গুগল ড্রাইভে ব্যাকআপ যাবে ও ফিরবে। গুগল এটি সম্পূর্ণ ফ্রি দেয়। একবার নিচের ধাপগুলো করুন:</p>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>Google Cloud Console-এ যান</b>
+ব্রাউজারে (কম্পিউটারে করলে সুবিধা হয়): <span class="path">console.cloud.google.com</span> — আপনার জিমেইল দিয়ে সাইন-ইন করুন।</div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>নতুন প্রজেক্ট তৈরি করুন</b>
+উপরে প্রজেক্টের নামের উপর ক্লিক → <b>New Project</b> → নাম দিন "Amar Hishab" → Create → উপরের তালিকা থেকে এটি বেছে নিন।</div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>Google Drive API চালু করুন</b>
+উপরের সার্চবারে লিখুন <span class="kbd">Google Drive API</span> → ঢুকে <b>Enable</b> চাপুন।</div></div>
+<div class="step"><div class="n">৪</div><div class="b"><b>OAuth consent screen সেট করুন</b>
+বাম মেনু → <b>APIs &amp; Services → OAuth consent screen</b> → User Type: <b>External</b> → Create → App name: "Amar Hishab", User support email: আপনার জিমেইল → বাকি ধাপ Next দিয়ে পার হন → শেষে <b>Test users</b> অংশে <b>+ Add users</b> করে <b>নিজের জিমেইলটি</b> যোগ করুন।</div></div>
+<div class="step"><div class="n">৫</div><div class="b"><b>Client ID তৈরি করুন</b>
+বাম মেনু → <b>Credentials → + Create Credentials → OAuth client ID</b> → Application type: <b>Web application</b>।
+নিচে <b>Authorized JavaScript origins</b>-এ আপনার অ্যাপের ঠিকানা যোগ করুন, যেমন: <span class="path">https://আপনার-নাম.netlify.app</span> (শেষে / দেবেন না) → <b>Create</b>।</div></div>
+<div class="step"><div class="n">৬</div><div class="b"><b>Client ID অ্যাপে বসান</b>
+কপি করা <span class="path">xxxx.apps.googleusercontent.com</span> → অ্যাপে <b>আরও → সেটিংস → Google OAuth Client ID</b> ঘরে বসিয়ে সংরক্ষণ করুন।</div></div>
+<div class="step"><div class="n">৭</div><div class="b"><b>ব্যবহার শুরু!</b>
+<b>আরও → ব্যাকআপ ও রিস্টোর → "☁️ ড্রাইভে ব্যাকআপ দিন"</b> — প্রথমবার গুগল অনুমতি চাইবে, Allow করলেই আপনার ড্রাইভে <span class="path">amar-hishab-backup.json</span> ফাইলে সব সেভ হবে। রোজ/সপ্তাহে চেপে রাখুন।</div></div>
+</div>
+<div class="info">🔒 <b>নিরাপত্তা:</b> অ্যাপটি শুধু <span class="kbd">drive.file</span> অনুমতি নেয় — এতে অ্যাপটি শুধুমাত্র <b>নিজের তৈরি করা</b> ব্যাকআপ ফাইলটি দেখতে/লিখতে পারে, আপনার ড্রাইভের অন্য কোনো ফাইল বা ছবিতে হাত দিতে পারে না।</div>
+
+<!-- ================================================================ -->
+<h2 id="routine">৭. 🗓️ প্রতিদিনের ব্যবহারের রুটিন</h2>
+<div class="card">
+<table>
+<tr><th>সময়</th><th>কাজ</th></tr>
+<tr><td><b>প্রতিটি বিক্রয়ে</b></td><td>হোম → 🛒 বিক্রয় → পণ্যের নাম লিখে খুঁজে ＋ চাপুন → স্টক নিজে থেকেই কমবে, লাভ নিজে থেকেই হিসাব হবে। বাকি দিলে গ্রাহক বেছে দিন — খাতায় চলে যাবে।</td></tr>
+<tr><td><b>প্রতিটি ব্যাংকিং লেনদেনে</b></td><td>হোম → 💸 ব্যাংকিং → সেবা (ক্যাশ ইন/আউট/সেন্ড মানি) → টাকা লিখুন — কমিশন অটো বসবে, ওয়ালেট ব্যালান্স অটো বদলাবে।</td></tr>
+<tr><td><b>প্রতিটি রিচার্জে</b></td><td>হোম → 📱 রিচার্জ → অপারেটর + টাকা — কমিশন অটো, অপারেটর ব্যালান্স অটো। ফ্লেক্সিলোড থেকে টাকা তুললে "কমিশন উত্তোলন"।</td></tr>
+<tr><td><b>মাল এলে</b></td><td>মুদি → স্টক → পণ্যের পাশে "ক্রয়" → পরিমাণ ও দাম — স্টক বাড়বে; বাকি কিনলে সাপ্লায়ার বাছুন।</td></tr>
+<tr><td><b>খরচ হলে</b></td><td>🧾 খরচ → কোন ব্যবসার খরচ সেটা বাছুন (সঠিক ব্যবসার লাভ-ক্ষতি থেকে বাদ যাবে)।</td></tr>
+<tr><td><b>দিন শেষে (২ মিনিট)</b></td><td>📊 রিপোর্ট → "আজ" — আজকের মোট বিক্রয়, তিন ব্যবসার আলাদা লাভ ও মোট লাভ দেখুন। হাতের নগদের সাথে মিলিয়ে নিন।</td></tr>
+<tr><td><b>সপ্তাহ/মাস শেষে</b></td><td>রিপোর্টে "এই সপ্তাহ/এই মাস" দেখুন + ড্রাইভে ব্যাকআপ দিন।</td></tr>
+</table>
+</div>
+<div class="good">💡 <b>সমন্বয় (Reconcile) করার নিয়ম:</b> কোনো ওয়ালেট/অপারেটরের ব্যালান্স অ্যাপের সাথে আসল স্টেটমেন্ট না মিললে সেই কার্ডের "সমন্বয়" বাটনে আসল ব্যালান্স লিখে দিন — পার্থক্যটি সমন্বয় হিসেবে যোগ হবে, লাভ-ক্ষতির হিসাব নষ্ট হবে না।</div>
+
+<!-- ================================================================ -->
+<h2 id="extra">৮. 🎁 আপনার চাওয়ার বাইরে যা যোগ করা হয়েছে (বিনামূল্যে)</h2>
+<div class="card">
+<ul>
+<li>💬 <b>এসএমএস রিমাইন্ডার</b> — খাতায় গ্রাহকের নাম্বারে চাপলেই বাকির এসএমএস তৈরি হয়ে যায়, এক ট্যাপে পাঠান (টালি খাতার মতোই) + 📞 সরাসরি কল</li>
+<li>⚠️ <b>কম স্টক অ্যালার্ট</b> — কোনো পণ্য সীমার নিচে নামলেই হোমে সতর্কতা</li>
+<li>🔐 <b>PIN লক</b> — অন্য কেউ অ্যাপ খুললে হিসাব দেখতে পারবে না</li>
+<li>🏆 <b>সবচেয়ে লাভজনক পণ্যের তালিকা</b> — কোন পণ্য থেকে কত লাভ হলো</li>
+<li>📋 <b>রিপোর্ট কপি</b> — এক ক্লিকে সারসংক্ষেপ কপি করে কাউকে পাঠানো যায়</li>
+<li>➕ <b>নিজের মতো সাজানো</b> — নতুন ওয়ালেট (ট্যাপ/মাকাশ/আইপিএস), নতুন অপারেটর যোগ করা যায়</li>
+<li>📊 <b>স্টক ভ্যালুয়েশন</b> — যেকোনো মুহূর্তে "আমার দোকানের মাল কত টাকার (ক্রয়ে/বিক্রয়ে)"</li>
+<li>🗓️ <b>পেছনের তারিখে এন্ট্রি</b> — ভুলে গেলে পরে ঠিক তারিখ দিয়ে এন্ট্রি দেওয়া যায়</li>
+<li>🧾 <b>লেনদেন মুছলে অটো ফেরত</b> — ভুল বিক্রয় মুছলে স্টক ও খাতা নিজে থেকেই ঠিক হয়ে যায়</li>
+</ul>
+</div>
+
+<!-- ================================================================ -->
+<h2 id="future">৯. 🔮 ভবিষ্যতে যোগ করা যাবে (চাইলে আমাকে বলুন)</h2>
+<div class="card">
+<ul>
+<li>🖨️ ব্লুটুথ থার্মাল প্রিন্টারে রিসিট প্রিন্ট</li>
+<li>📷 পণ্যের ছবি / বারকোড স্ক্যান</li>
+<li>👤 কর্মচারী (হিসাবী) ম্যানেজমেন্ট ও বেতন হিসাব</li>
+<li>🏦 ব্যাংক হিসাব ও ক্যাশ ফ্লো স্টেটমেন্ট (আয়-ব্যয়ের বিস্তারিত খতিয়ান)</li>
+<li>📈 লাভ-ক্ষতির গ্রাফ (মাসে-মাসে তুলনা)</li>
+<li>🔔 বাকি আদায়ের রিমাইন্ডার নোটিফিকেশন</li>
+</ul>
+<p class="mut">এগুলোর যেটা দরকার, এই চ্যাটে বললেই পরের ভার্সনে যোগ করে দেওয়া যাবে।</p>
+</div>
+
+<!-- ================================================================ -->
+<h2 id="alt">১০. 🔄 বিকল্প ফ্রি পথ — Google AppSheet (না-কোডিং)</h2>
+<div class="card">
+<p>কোডিং ছাড়াই Google-এর নিজস্ব টুল <b>AppSheet</b> দিয়েও অ্যাপ বানানো যায় (ডেটা থাকে Google Sheets-এ, তাই ড্রাইভেই):</p>
+<ol>
+<li><span class="path">sheets.google.com</span>-এ একটি শিট বানান (কলাম: তারিখ, ধরন, টাকা, কমিশন...)</li>
+<li><span class="path">appsheet.google.com</span> → Start new app → শিটটি যোগ করুন</li>
+<li>View/Form যোগ করে বাটন বানান → ফোনে AppSheet অ্যাপ দিয়ে চালান</li>
+</ol>
+<p><b>কিন্তু সতর্কতা:</b> ফ্রি প্লানে AppSheet-এর নিজস্ব ব্র্যান্ডিং থাকে, রিপোর্ট/কমিশন-রেটের মতো জটিল হিসাব বানানো কঠিন, ইন্টারনেট ছাড়া সীমিত। আপনার তিন-ব্যবসার আলাদা কমিশন হিসাবের জন্য যে অ্যাপ আমি বানিয়ে দিলাম সেটিই বেশি উপযোগী — এটি <b>আপনার একার</b>, কোনো ব্র্যান্ডিং/সীমাবদ্ধতা নেই।</p>
+</div>
+
+<!-- ================================================================ -->
+<h2 id="play">১১. 🏪 কখনো প্লে-স্টোরে দিতে চাইলে</h2>
+<div class="card">
+<p>এই অ্যাপটি <span class="path">pwabuilder.com</span> সাইটে গিয়ে আপনার লিংক দিলে ফ্রিতেই একটি <b>APK/ABB ফাইল</b> বানিয়ে দেয় — দিয়ে যেকোনো অ্যান্ড্রয়েড ফোনে সরাসরি ইনস্টল করা যায়। আর গুগল প্লে-স্টোরে প্রকাশ করতে চাইলে গুগল ডেভেলপার অ্যাকাউন্টে <b>একবারই ২৫ ডলার (≈ ৩,০০০ টাকা)</b> দিতে হয় — এটাই একমাত্র খরচ যা কখনো লাগবে, না চাইলে লাগবেই না।</p>
+</div>
+
+<!-- ================================================================ -->
+<h2 id="faq">১২. ❓ সাধারণ সমস্যা ও সমাধান (FAQ)</h2>
+<div class="card">
+<div class="q"><b>প্রিভিউতে ডেটা সেভ হচ্ছে না কেন?</b><br>এখানকার প্রিভিউ শুধু দেখার জন্য। ফাইলটি ফোনে Chrome-এ খুললে বা হোস্ট করলে প্রতিটি এন্ট্রি স্থায়ীভাবে সেভ হবে।</div>
+<div class="q"><b>ডেটা উধাও হয়ে গেলে?</b><br>ব্রাউজারের "Clear browsing data / site data" দেওয়া হলে এমন হতে পারে। ড্রাইভ-ব্যাকআপ থাকলে রিস্টোর করুন — সব ফিরে পাবেন। এজন্যই নিয়মিত ব্যাকআপ জরুরি।</div>
+<div class="q"><b>কমিশন ভুল হিসাব হচ্ছে?</b><br>সেটিংসে রেট পরীক্ষা করুন — হাজার প্রতি টাকা ধরে হিসাব হয়। লেনদেনের সময়ও কমিশনের ঘরে হাতে ঠিক করা যায়।</div>
+<div class="q"><b>"ড্রাইভে ব্যাকআপ" বাটনে চাপলে কিছু হচ্ছে না?</b><br>Client ID ঠিক আছে কি দেখুন; ধাপ ৫-এর ৫ নম্বর কাজে "Authorized JavaScript origins"-এ আপনার অ্যাপের ঠিকানা <b>হুবহু</b> (https:// সহ, শেষে / ছাড়া) দেওয়া আছে কি না মিলিয়ে নিন; ইন্টারনেট চালু আছে কি না দেখুন।</div>
+<div class="q"><b>দুইটা ফোনে একসাথে চালাতে পারব?</b><br>একসাথে নয় (ডেটা আলাদা জায়গায় জমবে)। ফোন বদলালে: পুরনোটাতে ব্যাকআপ → নতুনটায় রিস্টোর — তাহলেই সব হিসাব নতুন ফোনে।</div>
+<div class="q"><b>ক্যাশ আউটে আমার কমিশন ওয়ালেটে যোগ হয় — কিন্তু আমার ক্ষেত্রে নগদে পাই?</b><br>সমস্যা নেই: "কমিশন/টাকা উত্তোলন" এন্ট্রি দিলে ওয়ালেট থেকে নগদে চলে আসবে; লাভ-ক্ষতির রিপোর্ট ঠিকই থাকবে। মাঝে মাঝে "সমন্বয়" দিয়ে আসল ব্যালান্স মিলিয়ে নিন।</div>
+<div class="q"><b>সব ভুলে গিয়ে নতুন করে শুরু করতে চাই?</b><br>আরও → সেটিংস → "সব ডেটা মুছুন" (আগে ব্যাকআপ নিয়েছেন তো?)।</div>
+</div>
+
+<footer>
+📒 <b>আমার হিসাব v1.0</b> — আপনার জন্য তৈরি, আপনার মালিকানায়। সম্পূর্ণ ফ্রি, চিরদিন।<br>
+কোনো ফিচার যোগ করতে চাইলে বা কোথাও আটকে গেলে চ্যাটে জানান — ঠিক করে দেওয়া হবে।
+</footer>
+</div>
+</body>
+</html>
