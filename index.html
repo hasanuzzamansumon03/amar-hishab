@@ -155,7 +155,7 @@ function fmtDate(ds){if(!ds)return '';const p=String(ds).split('-');return bn(+p
 /* ================= ডেটা মডেল ================= */
 function freshState(){return{
   v:1,
-  settings:{shopName:'আমার দোকান',ownerName:'',ownerPhone:'',openingCash:0,pin:'',passHash:'',passHint:'',driveClientID:'',lastDrive:'',autoRemind:true,remindOff:'',autoBackup:true,gTok:null,lastAutoFail:0},
+  settings:{shopName:'আমার দোকান',ownerName:'',ownerPhone:'',openingCash:0,pin:'',passHash:'',passHint:'',driveClientID:'',lastDrive:'',autoRemind:true,remindOff:'',autoBackup:true,gTok:null,lastAutoFail:0,catalogV:0},
   parties:[],partyTxns:[],
   products:[],sales:[],purchases:[],expenses:[],
   wallets:[
@@ -206,7 +206,9 @@ function cashTotal(){let c=S.settings.openingCash||0;
 function partyBal(id){let b=0;S.partyTxns.forEach(t=>{if(t.partyId===id)b+=(t.kind==='due'?t.amount:-(t.amount||0))});return t2(b)}
 function partyName(id){const p=S.parties.find(x=>x.id===id);return p?p.name:''}
 function totPaboDibo(){let po=0,db=0;S.parties.forEach(p=>{const b=partyBal(p.id);if(p.type==='cust'&&b>0)po+=b;if(p.type==='supp'&&b>0)db+=b});return{po:t2(po),db:t2(db)}}
-function stockValue(){let v=0,sv=0,low=0;S.products.forEach(p=>{v+=p.stockQty*p.buyPrice;sv+=p.stockQty*p.sellPrice;if(p.stockQty<=p.lowQty)low++});return{buy:t2(v),sell:t2(sv),low:low}}
+function stockValue(){let v=0,sv=0,low=0;S.products.forEach(p=>{v+=p.stockQty*p.buyPrice;sv+=p.stockQty*p.sellPrice;
+const conf=p.buyPrice>0||p.sellPrice>0;
+if(conf&&p.stockQty<=p.lowQty)low++});return{buy:t2(v),sell:t2(sv),low:low}}
 
 /* ================= রিপোর্টের হিসাব ================= */
 function statsGrocery(from,to){let tot=0,cost=0,prof=0,cnt=0;
@@ -318,13 +320,16 @@ g.innerHTML='<button class="btn" style="margin-bottom:11px" onclick="openSaleMod
 +'<div class="rt"><b>'+fmt(s.total)+'</b></div><button class="del" onclick="delSale(\''+s.id+'\')">🗑</button></div>').join('')+'</div>'
 :'<div class="card"><div class="empty">এখনো কোনো বিক্রয় নেই।<br>"＋ নতুন বিক্রয়" চাপুন।</div></div>')}
 if(cur.gsub==='stock'){const sv=stockValue();
+const unpriced=S.products.filter(p=>!p.buyPrice||!p.sellPrice).length;
 g.innerHTML='<div class="card"><div class="b3"><div><small>স্টকের মূল্য (ক্রয়)</small><b>'+fmt(sv.buy)+'</b></div><div><small>বিক্রয় মূল্যে</small><b>'+fmt(sv.sell)+'</b></div><div><small>সম্ভাব্য লাভ</small><b class="grn">'+fmt(sv.sell-sv.buy)+'</b></div></div></div>'
 +'<button class="btn" style="margin-bottom:11px" onclick="openProductModal()">＋ নতুন পণ্য যোগ করুন</button>'
-+'<div class="card" style="padding:4px 14px">'+(S.products.length?S.products.map(p=>'<div class="lrow"><div class="lt"><b>'+esc(p.name)+'</b>'
-+'<small>ক্রয় '+fmt(p.buyPrice)+' • বিক্রয় '+fmt(p.sellPrice)+' / '+esc(p.unit)+(p.stockQty<=p.lowQty?' <span class="badge b-red">কম স্টক</span>':'')+'</small></div>'
-+'<div class="rt"><b>'+bn(p.stockQty)+' '+esc(p.unit)+'</b><small class="mut">মূল্য '+fmt(p.stockQty*p.buyPrice)+'</small></div>'
-+'<button class="btn sm ghost" onclick="openPurchaseModal(\''+p.id+'\')">ক্রয়</button>'
-+'<button class="del" onclick="openProductModal(\''+p.id+'\')">✏️</button></div>').join(''):'<div class="empty">পণ্য যোগ করুন — নাম, ক্রয় মূল্য, বিক্রয় মূল্য ও পরিমাণ দিয়ে</div>')+'</div>'}
++'<input class="inp" id="stk_q" placeholder="🔍 পণ্যের নাম লিখে খুঁজুন..." style="margin-bottom:8px" oninput="searchStock(this.value)" value="'+esc(cur.stockQ||'')+'">'
++'<div class="seg" style="margin-bottom:10px">'
++'<button class="segb'+((cur.stockF||'all')==='all'?' on':'')+'" onclick="setStockFilter(\'all\')">সব ('+bn(S.products.length)+')</button>'
++'<button class="segb'+(cur.stockF==='price'?' on':'')+'" onclick="setStockFilter(\'price\')">💰 দাম বাকি ('+bn(unpriced)+')</button>'
++'<button class="segb'+(cur.stockF==='low'?' on':'')+'" onclick="setStockFilter(\'low\')">⚠️ কম স্টক</button>'
++'</div><div class="card" style="padding:4px 14px" id="stk_list"></div>';
+renderStockList()}
 if(cur.gsub==='buy'){const list=S.purchases.slice().reverse().slice(0,50);
 g.innerHTML='<button class="btn" style="margin-bottom:11px" onclick="openPurchaseModal()">＋ নতুন ক্রয় (মাল এলে)</button>'
 +(list.length?'<div class="card" style="padding:4px 14px">'+list.map(u=>'<div class="lrow"><div class="lt"><b>'+esc(u.name)+'</b><small>'+fmtDate(u.date)+' • '+bn(u.qty)+' '+esc(u.unit)+' × '+fmt(u.unitCost)+(u.partyId?' • '+esc(partyName(u.partyId)):'')+'</small></div>'
@@ -335,6 +340,23 @@ if(cur.gsub==='exp'){const list=S.expenses.slice().reverse().slice(0,50);
 g.innerHTML='<button class="btn" style="margin-bottom:11px" onclick="openExpenseModal()">＋ নতুন খরচ</button>'
 +(list.length?'<div class="card" style="padding:4px 14px">'+list.map(e=>'<div class="lrow"><div class="lt"><b>'+esc(e.title)+'</b><small>'+fmtDate(e.date)+' • <span class="badge b-teal">'+EX_CAT[e.cat]+'</span></small></div><div class="rt"><b class="red">'+fmt(e.amount)+'</b></div><button class="del" onclick="delExpense(\''+e.id+'\')">🗑</button></div>').join('')+'</div>'
 :'<div class="card"><div class="empty">কোনো খরচ নেই।</div></div>')}}
+
+function searchStock(v){cur.stockQ=v;renderStockList()}
+function setStockFilter(f){cur.stockF=f;renderGrocery()}
+function renderStockList(){const box=el('stk_list');if(!box)return;
+const q=(cur.stockQ||'').trim();const f=cur.stockF||'all';
+let list=S.products.slice();
+if(q)list=list.filter(p=>p.name.indexOf(q)>=0);
+if(f==='price')list=list.filter(p=>!p.buyPrice||!p.sellPrice);
+if(f==='low')list=list.filter(p=>p.stockQty<=p.lowQty&&(p.buyPrice||p.sellPrice));
+if(f==='all'&&!q)list=list.slice().sort((a,b)=>((a.buyPrice&&a.sellPrice)?1:0)-((b.buyPrice&&b.sellPrice)?1:0));
+const info=q?('<small class="mut" style="display:block;padding:9px 2px 0">🔎 "'+esc(q)+'" — '+bn(list.length)+' টি পণ্য পাওয়া গেছে</small>'):'';
+box.innerHTML=info+(list.length?list.map(p=>'<div class="lrow"><div class="lt"><b>'+esc(p.name)+'</b>'
++'<small>ক্রয় '+fmt(p.buyPrice)+' • বিক্রয় '+fmt(p.sellPrice)+' / '+esc(p.unit)+((!p.buyPrice||!p.sellPrice)?' <span class="badge b-org">দাম বাকি</span>':'')+((p.buyPrice||p.sellPrice)&&p.stockQty<=p.lowQty?' <span class="badge b-red">কম স্টক</span>':'')+'</small></div>'
++'<div class="rt"><b>'+bn(p.stockQty)+' '+esc(p.unit)+'</b><small class="mut">মূল্য '+fmt(p.stockQty*p.buyPrice)+'</small></div>'
++'<button class="btn sm ghost" onclick="openPurchaseModal(\''+p.id+'\')">ক্রয়</button>'
++'<button class="del" onclick="openProductModal(\''+p.id+'\')">✏️</button></div>').join('')
+:(q?'<div class="empty">কোনো পণ্য পাওয়া যায়নি — বানান মিলিয়ে দেখুন</div>':'<div class="empty">কোনো পণ্য নেই — "＋ নতুন পণ্য" দিয়ে যোগ করুন</div>'))}
 
 /* ---------- পণ্য ---------- */
 function openProductModal(id){const p=id?S.products.find(x=>x.id===id):null;
@@ -979,7 +1001,7 @@ const total=t2(items.reduce((s,i)=>s+i.sell*i.qty,0));const cost=t2(items.reduce
 const due=t2(Math.max(0,total-paid));const id=uid();
 S.sales.push({id:id,ts:Date.now(),date:date,items:items,total:total,cost:cost,profit:t2(total-cost),paid:t2(paid),due:due,partyId:partyId||''});
 if(partyId&&due>0)S.partyTxns.push({id:uid(),ts:Date.now(),date:date,partyId:partyId,kind:'due',amount:due,cash:0,note:'বাকি বিক্রয়',saleId:id})}
-function loadDemo(silent){const keep={passHash:S.settings.passHash,ownerPhone:S.settings.ownerPhone,passHint:S.settings.passHint,pin:S.settings.pin,ownerName:S.settings.ownerName,driveClientID:S.settings.driveClientID,lastDrive:S.settings.lastDrive,autoRemind:S.settings.autoRemind,autoBackup:S.settings.autoBackup,gTok:S.settings.gTok};
+function loadDemo(silent){const keep={passHash:S.settings.passHash,ownerPhone:S.settings.ownerPhone,passHint:S.settings.passHint,pin:S.settings.pin,ownerName:S.settings.ownerName,driveClientID:S.settings.driveClientID,lastDrive:S.settings.lastDrive,autoRemind:S.settings.autoRemind,autoBackup:S.settings.autoBackup,gTok:S.settings.gTok,catalogV:S.settings.catalogV};
 S=freshState();Object.assign(S.settings,keep);const st=S.settings;
 st.shopName='ডেমো মুদি ষ্টোর';st.openingCash=5000;
 [['চাল (মিনিকেট)','কেজি',68,74,50,10],['চিনি','কেজি',118,128,20,5],['সয়াবিন তেল ৫ লিটার','পিস',810,860,12,3],
@@ -1023,9 +1045,23 @@ if(!silent){save();renderView();toast('ডেমো ডেটা লোড হ�
 function loadDemoBtn(){confirmBox('ডেমো ডেটা লোড করলে বর্তমান ডেটা মুছে যাবে। চালিয়ে যাবেন?',()=>{loadDemo(false)})}
 function resetAll(){confirmBox('⚠️ সব ডেটা মুছে ফেলা হবে — এটি ফেরানো যাবে না! আগে ব্যাকআপ নিন। নিশ্চিত?',()=>{S=freshState();save();renderView();toast('সব ডেটা মুছে ফেলা হয়েছে')})}
 
+/* ================= দোকানের পণ্যের তালিকা (ক্যাটালগ) ================= */
+const CATALOG_VERSION=1;
+const CATALOG=['চকলে','ভ্যানিলা কেক','ফ্রুট ফান বিস্কিট','চকো টাইম','রুচি চানাচুর','রুচি বারবিকিউ','রুচি ঝাল মুড়ি','ড্রাই কেক বিস ক্লাব','ওয়ান্ডার লেয়ার কেক','ওয়ান্ডার ইসমাইল কেক','লেক্সাস','চকো পাই কেক','ঘি বিস্কিট','অলিম্পিক মটর ভাজ','গোল্ড মার্ক টেস্টি কেক','অলিম্পিক সফট কেক','কোকোলা পপস্টার বিস্কুট','অলিম্পিক ডিলাইট কেক','হ্যাপি টাইম ডাল ভাজ','নাটি বিস্কুট','অলিম্পিক এনার্জি বিস্কুট ছোট','অলিম্পিক এনার্জি বিস্কুট বড়','চকোবিন জেমস','বম্বে পটেটো ছোট','বম্বে পটেটো বড়','মিস্টার টুইস্ট','কুরকুরে ছোট','কুরকুরে বড়','লেজ','পিলো হোয়াই','প্রাণ জিরো ছোট','প্রাণ জিরো বড়','বম্বে আলুজ','বোম্বে রিং চিপস','বম্বে মিস্টার চিকেন','বম্বে নাসোজ','প্রাণ পটেটো','পিঙ্গো','পটাটা বিস্কুট বারবিকিউ','পটাটা বিস্কুট ঝাল','হ্যাটট্রিক বিস্কুট','ডিলাইট বিস্কুট','ফান ক্র্যাক বিস্কুট','তেঁতুল চাটনি','নেসক্যাফে কফি','কফি হাউজ','দুধ কফি','ম্যাগি মসলা','প্রাণ সাধের মসলা','ফ্রেশ গুঁড়া দুধ','স্টারসিপ গুড়া দুধ','তীর গুড়া দুধ','বেঙ্গল চা','গ্লুকোজ','হরলিক্স','প্যাকেটের ললিপপ','প্রাণ সস','ক্লিনিক প্লাস শ্যাম্পু','চিক শ্যাম্পু','প্যারাসুট শ্যাম্পু','সানসিল্ক শ্যাম্পু','ডাব শ্যাম্প','ক্লিয়ার শ্যাম্পু','ক্লিয়ার ম্যান শ্যাম্পু','ক্লোজআপ পেষ্ট','সার্ফ এক্সেল পাউডার ছোট','সার্ফ এক্সেল পাউডার বড়','একটিভ সাবান','লাক্স সাবান','গোদরেজ কালি','শ্যাম্পু কালি','পকেট টিস্যু','টয়লেট টিস্যু সাদা','টয়লেট টিস্যু লাল','পারফিউম টিস্যু','রেস্টুরেন্ট টিস্যু','মামা ওয়েফার','স্যাভলন সাবান','স্যান্ডেলিনা সাবান 150 গ্রাম','লাইফ বয় সাবান','ব্যাকট্রল সাবান','ওয়ান্ডার ভিম বার বড়','ওয়ান্ডার ভীম বার ছোট','কোলগেট ছোট','কোলগেট মিডিয়াম','কোলগেট বড়','পেপসোডেন্ট পেস্ট ছোট','পেপসোডেন্ট পেস্ট মিডিয়াম','পেপসোডেন্ট পেস্ট বড়','মেডিপ্লাস পেস্ট ছোট','মেডিপ্লাস পেস্ট মিডিয়াম','মেডিপ্লাস পেস্ট বড়','ম্যাজিক টুথ পাউডার ছোট','ম্যাজিক টুথ পাউডার বড়','ফরচুন সরিষার তেল ছোট','ফরচুন সরিষার তেল বড়','প্যারাসুট নারিকেল তেল বড়','প্যারাসুট নারিকেল তেল মিডিয়াম','প্যারাসুট নারিকেল তেল ছোট','প্যারাসুট বেলিফুল বড়','প্যারাসুট বেলিফুল ছোট','প্যারাসুট এক্সট্রা কেয়ার','ব্রাশ','সল্টি বিস্কুট','বাটার বাইট ফ্যামিলি','এনার্জি প্লাস হ্যাপি টাইম','ফাস্ট চয়েজ','হেব্বি এনার্জি','মিস্টার কুকিজ','হুইল সাবান','প্রিমিয়াম টোস্ট','বিস্কিটো','ফিট বিস্কুট','গ্র্যান্ড চয়েস বিস্কুট','পটাটা বিস্কুট বড়','অরেঞ্জ ক্রিম বিস্কুট','ইয়ো ইয়ো বিস্কুট','হ্যাপি টাইম অরেঞ্জ বিস্কুট','লামিয়া চানাচুর','মুড়ি 1 কেজি','মুড়ি 400 গ্রাম','রিন পাউডার 1 কেজি','রিন পাউডার 500 গ্রাম','হুইল পাউডার 1 কেজি','হুইল পাউডার 500 গ্রাম','সার্ফ এক্সেল পাউডার 500 গ্রাম','লবণ','পাওয়ার পানি','বুলডোজার পানি','স্পিড পানি','মজো পানি ছোট','মজো পানি বড়','ম্যাংগো জুস বোতল ছোট','ম্যাংগো জুস বোতল মিডিয়াম','ম্যাংগো জুস বোতল বড়','ড্রিঙ্কো পানি','ম্যাংগো প্যাকেট জুস ছোট','ম্যাংগো প্যাকেট জুস মিডিয়াম','ম্যাংগো প্যাকেট জুস বড়','এসএমসি জুস','ফ্রেশ পানি বড়','ফ্রেশ পানি ছোট','ফান জয়','এটম চুইংগাম','মিল্ক ক্যান্ডি','প্রাণ জেলি ক্যান্ডি','অলিম্পিক চকিটো','ব্রেক ওয়েফার','চকোবিন মেসের বক্স','অলিম্পিক ওয়েফান','অলিম্পিক পালস চকলেট','আলপিনলিবে চকলেট','বেলজিও চোকো লাভা','সুইট লাভ চকলেট','তেতুল ক্যান্ডি','ম্যাংগো বার','ললিপপ','চকো বল (চকলেট কাপ)','পিনাট বার','পান্ডা চকোবি','কোকো বাইট ওয়াইফার','ম্যাজিক কাপ লিচু','এসএমসি ওর স্যালাইন','জোনাকি কয়েল','উজালা কয়েল','এসি সেভেন কয়েল','কালো টেপ','কষ টেপ','ইনো','মেহেদী কালার','মেগি নুডুলস ফ্যামিলি প্যাক','মিস্টার নুডুলস ফামিলি প্যাক','মিস্টার নুডুলস চেইন','মিস্টার নুডুলস কোরিয়ান চেইন','মামা মিনি রোল বিস্কুট চিপস','ডিম','ময়দা','ভুসি','ফিড','পলিথিন','স্টেশনারি','ব্যাটারি','পানি ছোট','পানি বড়','ব্লেড','লাচ্ছি','লিচু লজেন্স','ডিভাইনো চকলেট','একলেয়ার চকলেট','এসএমসি ফ্রুটি স্যালাইন','ঈগল কয়েল','ডেঙ্গু আউট কয়েল','ছোট স্টিক নুডুলস','বড় স্টিক নুডুলস','গ্যাস লাইট বড়','গ্যাস লাইট ছোট','কোকোলা নুডুলস','কাঠের রেক তৈরি'];
+const CAT_UNITS={'মুড়ি 1 কেজি':'প্যাকেট','মুড়ি 400 গ্রাম':'প্যাকেট','রিন পাউডার 1 কেজি':'প্যাকেট','রিন পাউডার 500 গ্রাম':'প্যাকেট','হুইল পাউডার 1 কেজি':'প্যাকেট','হুইল পাউডার 500 গ্রাম':'প্যাকেট','সার্ফ এক্সেল পাউডার 500 গ্রাম':'প্যাকেট','লবণ':'কেজি','ময়দা':'কেজি','ভুসি':'কেজি','ফিড':'কেজি','ডিম':'হালি','বেঙ্গল চা':'প্যাকেট','মেগি নুডুলস ফ্যামিলি প্যাক':'প্যাকেট','মিস্টার নুডুলস ফামিলি প্যাক':'প্যাকেট','মিস্টার নুডুলস চেইন':'প্যাকেট','মিস্টার নুডুলস কোরিয়ান চেইন':'প্যাকেট','ছোট স্টিক নুডুলস':'প্যাকেট','বড় স্টিক নুডুলস':'প্যাকেট','কোকোলা নুডুলস':'প্যাকেট'};
+function importCatalog(){
+if(!S.settings.catalogV||S.settings.catalogV<CATALOG_VERSION){
+let added=0;
+CATALOG.forEach(function(n){const nm=String(n).trim();if(!nm)return;
+let exists=false;for(let i=0;i<S.products.length;i++){if(S.products[i].name===nm){exists=true;break}}
+if(!exists){S.products.push({id:uid(),name:nm,unit:CAT_UNITS[nm]||'পিস',buyPrice:0,sellPrice:0,stockQty:0,lowQty:5});added++}});
+S.settings.catalogV=CATALOG_VERSION;save();
+if(added>0&&canStore)setTimeout(function(){toast('📦 '+bn(added)+' টি পণ্য স্টক তালিকায় যোগ হয়েছে — দাম ও স্টক বসিয়ে নিন')},900)}}
+
 /* ================= চালু ================= */
 function init(){el('h_store').textContent=canStore?'সেভ চালু ✓':'প্রিভিউ';
 if(S.settings.passHash||S.settings.pin)showLock();
+importCatalog();
 go('home');
 setInterval(maybeAutoBackup,30*60*1000);
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')setTimeout(maybeAutoBackup,1500)});
