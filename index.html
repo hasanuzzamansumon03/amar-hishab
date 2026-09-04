@@ -542,7 +542,7 @@ function renderLedger(){const pd=totPaboDibo();
 const list=S.parties.slice().sort((a,b)=>partyBal(b.id)-partyBal(a.id));
 el('view-ledger').innerHTML='<div class="card"><div class="b3"><div><small>🔵 মোট পাবো</small><b class="grn">'+fmt(pd.po)+'</b></div>'
 +'<div><small>🔴 মোট দেবো</small><b class="red">'+fmt(pd.db)+'</b></div><div><small>মোট হিসাব</small><b>'+bn(S.parties.length)+' জন</b></div></div></div>'
-+'<button class="btn" style="margin-bottom:11px" onclick="openPartyModal()">＋ নতুন হিসাব (গ্রাহক/সাপ্লায়ার)</button>'
++'<div class="row2" style="margin-bottom:11px"><button class="btn" onclick="openPartyModal()">＋ নতুন হিসাব</button><button class="btn ghost" onclick="openPartyPicker()">⚡ পাবো/দেবো এন্ট্রি</button></div>'
 +'<div class="card" style="padding:4px 14px">'+(list.length?list.map(p=>{const b=partyBal(p.id);
 const cls=p.type==='cust'?(b>0?'grn':'mut'):(b>0?'red':'mut');
 const lbl=p.type==='cust'?(b>0.001?'পাবো':(b<-0.001?'অগ্রিম আছে':'পরিশোধিত')):(b>0.001?'দেবো':(b<-0.001?'অগ্রিম দেওয়া':'পরিশোধিত'));
@@ -552,13 +552,27 @@ function openPartyModal(id){const p=id?S.parties.find(x=>x.id===id):null;
 openModal(p?'✏️ হিসাব এডিট':'👤 নতুন হিসাব',
 '<label class="lbl">নাম *</label><input class="inp" id="pt_name" value="'+(p?esc(p.name):'')+'" placeholder="গ্রাহক বা সাপ্লায়ারের নাম">'
 +'<label class="lbl">ধরন</label><select class="inp" id="pt_type"><option value="cust"'+((p&&p.type==='cust')?' selected':'')+'>🔵 গ্রাহক (তার থেকে আমি পাবো)</option><option value="supp"'+((p&&p.type==='supp')?' selected':'')+'>🔴 সাপ্লায়ার (তাকে আমি দেবো)</option></select>'
-+'<label class="lbl">মোবাইল নম্বর</label><input class="inp" id="pt_phone" inputmode="tel" value="'+(p?esc(p.phone||''):'')+'">',
++'<label class="lbl">মোবাইল নম্বর</label><input class="inp" id="pt_phone" inputmode="tel" value="'+(p?esc(p.phone||''):'')+'">'
++(p?'':'<label class="lbl">প্রারম্ভিক হিসাব ৳ * (কত টাকা পাবো বা দেবো)</label><input class="inp" id="pt_open" type="number" inputmode="decimal" placeholder="যেমন: ৫০০" style="font-size:18px;font-weight:700">'
++'<small class="mut" style="display:block;margin-top:3px">গ্রাহক হলে = তার কাছ থেকে <b>পাবো</b>; সাপ্লায়ার হলে = তাকে <b>দেবো</b>। শূন্য/খালি রাখলে এখন কোনো বাকি নেই।</small>'
++'<label class="lbl">কীসের জন্য? (মন্তব্য)</label><input class="inp" id="pt_note" placeholder="যেমন: আগের বাকি / ধার দিলাম / মাল নিলাম">'),
 '<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveParty(\''+(id||'')+'\')">সংরক্ষণ করুন</button>')}
 function saveParty(id){const name=el('pt_name').value.trim();if(!name)return toast('নাম লিখুন');
 if(id){const p=S.parties.find(x=>x.id===id);p.name=name;p.type=el('pt_type').value;p.phone=el('pt_phone').value}
-else S.parties.push({id:uid(),name:name,type:el('pt_type').value,phone:el('pt_phone').value});
+else{const nid=uid();S.parties.push({id:nid,name:name,type:el('pt_type').value,phone:el('pt_phone').value});
+const ob=el('pt_open')?(+el('pt_open').value||0):0;
+if(ob>0)S.partyTxns.push({id:uid(),ts:Date.now(),date:todayISO(),partyId:nid,kind:'due',amount:t2(ob),cash:0,note:(el('pt_note')?el('pt_note').value.trim():'')||'প্রারম্ভিক হিসাব'});
+if(ob>0)toast('হিসাব তৈরি ✅ বাকি '+fmt(ob)+' যোগ হয়েছে');else toast('হিসাব সংরক্ষিত');
+save();closeModal();renderView();return}
 save();closeModal();toast('হিসাব সংরক্ষিত');renderView()}
 function delParty(id){confirmBox('এই হিসাব ও তার সব লেনদেন মুছে যাবে। মুছবেন?',()=>{S.parties=S.parties.filter(p=>p.id!==id);S.partyTxns=S.partyTxns.filter(t=>t.partyId!==id);save();closeModal();renderView()})}
+function openPartyPicker(){if(!S.parties.length){toast('আগে "＋ নতুন হিসাব" দিয়ে গ্রাহক/সাপ্লায়ার যোগ করুন');return openPartyModal()}
+openModal('⚡ কার হিসাবে এন্ট্রি দেবেন?','<input class="inp" id="pp_q" placeholder="🔍 নাম লিখে খুঁজুন" oninput="renderPartyPick()" style="margin-bottom:8px"><div id="pp_list"></div>','');
+renderPartyPick()}
+function renderPartyPick(){const q=(el('pp_q').value||'').trim();const list=S.parties.filter(p=>!q||p.name.indexOf(q)>=0).slice(0,30);
+el('pp_list').innerHTML=list.length?list.map(p=>{const b=partyBal(p.id);const isC=p.type==='cust';
+return '<div class="lrow" onclick="closeModal();openDueAdd(\''+p.id+'\')" style="cursor:pointer"><div class="lt"><b>'+esc(p.name)+(isC?'':' <span class="badge b-org">সাপ্লায়ার</span>')+'</b><small>'+esc(p.phone||'')+'</small></div>'
++'<div class="rt"><b class="'+(isC?'grn':'red')+'">'+fmt(b)+'</b><small class="mut">'+(isC?'পাবো':'দেবো')+' ›</small></div></div>'}).join(''):'<div class="empty">কেউ পাওয়া যায়নি</div>'}
 function openPartyDetail(id){const p=S.parties.find(x=>x.id===id);if(!p)return;const b=partyBal(id);
 const tx=S.partyTxns.filter(t=>t.partyId===id).slice().reverse().slice(0,25);
 const isCust=p.type==='cust';
