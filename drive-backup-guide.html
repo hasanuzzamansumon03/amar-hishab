@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>গুগল ড্রাইভে অটো-ব্যাকআপ — কোড (Client ID) আনার সম্পূর্ণ গাইড</title>
+<style>
+:root{--g1:#00897b;--g2:#00564c;--grn:#2e7d32;--red:#c62828;--blu:#1a73e8;--ink:#17302b;--mut:#5f7772;--bg:#f2f7f6;--line:#d7e5e2}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans Bengali','Hind Siliguri','SolaimanLipi',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.8;font-size:16px}
+.wrap{max-width:720px;margin:0 auto;padding:16px 14px 60px}
+header.top{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;border-radius:18px;padding:24px 20px;margin-bottom:16px}
+header.top h1{font-size:22px;margin-bottom:4px}
+header.top p{opacity:.92;font-size:14px}
+.badge{display:inline-block;background:rgba(255,255,255,.2);border-radius:20px;padding:3px 12px;font-size:12px;margin:10px 4px 0 0}
+h2{font-size:19.5px;margin:30px 0 10px;padding:9px 14px;background:linear-gradient(90deg,#e3effd,transparent);border-left:5px solid var(--blu);border-radius:0 10px 10px 0}
+h3{font-size:16.5px;margin:18px 0 6px;color:#0d47a1}
+p{margin:8px 0}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin:12px 0;box-shadow:0 1px 4px rgba(20,80,70,.06)}
+.step{display:flex;gap:12px;margin:16px 0}
+.step .n{flex:none;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+.step .b{flex:1;border-bottom:1px dashed #d9e8e4;padding-bottom:14px}
+.step:last-child .b{border-bottom:none;padding-bottom:0}
+.step .b>b{display:block;margin-bottom:2px;font-size:15.5px}
+ol,ul{margin:8px 0 8px 22px}
+li{margin:6px 0}
+.kbd{border:1.5px solid #c7d6d2;border-bottom-width:3px;border-radius:7px;padding:1px 9px;background:#fff;font-size:13.5px;white-space:nowrap}
+.path{background:#eaf2f0;border-radius:6px;padding:0 7px;font-size:14px;font-family:monospace;color:#0b4f45;word-break:break-all}
+.origin{display:block;background:#e8f0fe;border:2px dashed #1a73e8;border-radius:10px;padding:10px 14px;font-family:monospace;font-size:15px;color:#0d47a1;text-align:center;margin:8px 0;font-weight:700;word-break:break-all}
+.warn{background:#fff8e6;border:1px solid #f0db9c;border-radius:12px;padding:11px 14px;margin:12px 0}
+.good{background:#e9f6ec;border:1px solid #bfe3c6;border-radius:12px;padding:11px 14px;margin:12px 0}
+.info{background:#e7f3f7;border:1px solid #bcdcea;border-radius:12px;padding:11px 14px;margin:12px 0}
+.q{background:#f7fbfa;border:1px dashed #b9d4ce;border-radius:10px;padding:10px 13px;margin:10px 0}
+.q b{color:var(--g2)}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0;background:#fff;border-radius:10px;overflow:hidden}
+th{background:var(--blu);color:#fff;text-align:left;padding:8px 10px;font-size:13.5px}
+td{padding:8px 10px;border-bottom:1px solid #e6efec;vertical-align:top}
+tr:last-child td{border-bottom:none}
+footer{margin-top:40px;text-align:center;color:var(--mut);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+.num{color:var(--red);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+<h1>☁️ গুগল ড্রাইভে অটো-ব্যাকআপ সেটআপ</h1>
+<p>গুগল থেকে কোড (Client ID) আনা → অ্যাপে যুক্ত করা → এক ট্যাপে ব্যাকআপ — সব ফোন দিয়েই, ধাপে ধাপে</p>
+<span class="badge">✅ ১০০% ফ্রি</span><span class="badge">⏱️ ১০–১৫ মিনিট</span><span class="badge">🔒 আপনার নিজের ড্রাইভেই থাকবে</span>
+</header>
+
+<div class="info"><b>💡 আগে জেনে নিন:</b> "কোড"টার আসল নাম <b>Google OAuth Client ID</b> — এটা গুগলকে পরিচয় জানায় যে "আমার অ্যাপটি আমার ড্রাইভে ব্যাকআপ রাখতে চায়"। এটা একবার আনলে আর কখনো লাগবে না। গুগল এটা ব্যক্তিগত ব্যবহারের জন্য সম্পূর্ণ ফ্রি দেয় — কার্ড/টাকা কিছুই লাগে না।</div>
+
+<h2>📋 যা যা লাগবে শুরু করার আগে</h2>
+<div class="card">
+<ol>
+<li>ফোনের <b>Chrome ব্রাউজার</b> (অন্য ব্রাউজারেও চলবে, Chrome ভালো)</li>
+<li>আপনার <b>জিমেইল অ্যাকাউন্ট</b> — যেটার ড্রাইভে ব্যাকআপ রাখতে চান (ফোনে যে জিমেইল লগইন আছে সেটাই দিন)</li>
+<li>ইন্টারনেট চালু থাকতে হবে</li>
+</ol>
+</div>
+
+<!-- ============ ধাপ ১ ============ -->
+<h2>🔧 ধাপ ১ — Google Cloud Console-এ প্রজেক্ট তৈরি (৩ মিনিট)</h2>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>Chrome-এ খুলুন</b>
+<span class="path">console.cloud.google.com</span><br>
+লগইন চাইলে <b>নিজের জিমেইল</b> দিয়ে সাইন-ইন করুন। "Welcome to Google Cloud" জাতীয় পেজ এলে সেটি পার হয়ে যান।</div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>মেনু গুলো পুরো না দেখালে আগেই করুন</b>
+Chrome-এর উপরের ডানে <b>⋮ → Desktop site</b> চালু করে পেজটি রিফ্রেশ করুন — ফোনে অনেক অপশন লুকিয়ে থাকে, Desktop site চালু করলেই সব দেখা যায়।</div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>নতুন প্রজেক্ট বানান</b>
+উপরে যেখানে প্রজেক্টের নাম দেখায় (সাধারণত "Select a project" বা পুরনো নাম) সেখানে ট্যাপ → <b>NEW PROJECT</b> (উপরে-ডানে)<br>
+→ Project name: <span class="kbd">Amar Hishab</span> → <b>Create</b><br>
+কয়েক সেকেন্ড পর উপরের নোটিফিকেশনে "project created" দেখাবে।</div></div>
+<div class="step"><div class="n">৪</div><div class="b"><b>প্রজেক্টটি বেছে নিন</b>
+আবার উপরের প্রজেক্ট-নামে ট্যাপ → তালিকায় <b>Amar Hishab</b> বেছে নিন। এরপর থেকে সব কাজ এই প্রজেক্টে হবে।</div></div>
+</div>
+
+<!-- ============ ধাপ ২ ============ -->
+<h2>🔌 ধাপ ২ — Google Drive API চালু করা (২ মিনিট)</h2>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>সরাসরি এই লিংকে যান</b>
+<span class="path">console.cloud.google.com/apis/library/drive.googleapis.com</span><br>
+(অথবা: বাম দিকের ☰ মেনু → <b>APIs &amp; Services → Library</b> → সার্চে লিখুন <span class="kbd">Google Drive API</span>)</div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>উপরে প্রজেক্ট ঠিক আছে কি দেখুন</b> — "Amar Hishab" দেখাচ্ছে কি না। না দেখালে প্রজেক্ট-নামে ট্যাপ করে বেছে নিন।</div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>চালু করুন</b>
+<b>Enable</b> বাটনে ট্যাপ করুন → কয়েক সেকেন্ডে Drive API চালু হয়ে যাবে (একবারই করতে হবে)।</div></div>
+</div>
+
+<!-- ============ ধাপ ৩ ============ -->
+<h2>🪪 ধাপ ৩ — অ্যাপের পরিচয় দেওয়া (OAuth সেটআপ, ৪ মিনিট)</h2>
+<p>গুগল জানতে চায় কার অ্যাপ, কে ব্যবহার করবে। নিচের ধাপে সেটা জানিয়ে দিন:</p>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>Auth সেটিং-এ যান</b>
+বাম ☰ মেনু → <b>APIs &amp; Services</b> → <b>OAuth consent screen</b><br>
+(নতুন ভার্সনে দেখাতে পারে: ☰ → <b>Google Auth Platform</b> বা সরাসরি <span class="path">console.cloud.google.com/auth/audience</span> — যেটাই দেখুন, কাজ একই)</div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>শুরু করুন</b>
+<b>Get started / Start now</b> বা <b>Create OAuth consent screen</b> বাটন চাপুন।<br>
+User Type জিজ্ঞেস করলে: <b>External</b> → Create।</div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>App information পূরণ করুন</b>
+• App name: <span class="kbd">Amar Hishab</span><br>
+• User support email: <b>আপনার জিমেইল</b> বাছুন<br>
+• Application home page (চাইলে): <span class="path">https://hasanuzzamansumon03.github.io</span><br>
+বাকি সব ফাঁকা রাখুন → <b>Save / Next</b> দিয়ে এগিয়ে যান। Scope জিজ্ঞেস করলে কিছু না বেছেই <b>Save &amp; Continue</b>।</div></div>
+<div class="step"><div class="n">৪</div><div class="b"><b>সবচেয়ে জরুরি ধাপ — Test user যোগ করুন!</b>
+<span class="num">এটা না করলে ব্যাকআপ বাটন কাজ করবে না (403 error আসবে)।</span><br>
+একই পেজে <b>Test users</b> অংশ → <b>+ Add users</b> → আপনার <b>পুরো জিমেইল</b> লিখুন (যেমন: <i>apnar@gmail.com</i>) → <b>Add</b> → Save।</div></div>
+</div>
+
+<!-- ============ ধাপ ৪ ============ -->
+<h2>🔑 ধাপ ৪ — কোডটি (Client ID) তৈরি করা (৩ মিনিট)</h2>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>Clients পেজে যান</b>
+বাম মেনু → <b>APIs &amp; Services → Credentials</b> → উপরে <b>+ Create Credentials</b> → <b>OAuth client ID</b><br>
+(নতুন ভার্সনে: <b>Google Auth Platform → Clients</b> → <b>+ Create Client</b> — সরাসরি লিংক: <span class="path">console.cloud.google.com/auth/clients</span>)</div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>অ্যাপের ধরন বাছুন</b>
+Application type: <b>Web application</b><br>
+Name: <span class="kbd">Amar Hishab</span></div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>Authorized JavaScript origins — এখানেই আপনার অ্যাপের ঠিকানা বসাবেন</b>
+<b>+ Add URI</b> চাপুন, তারপর <b>হুবহু এটা</b> লিখুন (কপি করে বসান):
+<span class="origin">https://hasanuzzamansumon03.github.io</span>
+<span class="num">⚠️ শুরুতে https:// লাগবেই, শেষে / দেবেন না, বড়-ছোট হাতের অক্ষর হুবহু এইরকম।</span></div></div>
+<div class="step"><div class="n">৪</div><div class="b"><b>তৈরি করুন ও কোড কপি করুন</b>
+নিচে <b>Create / Save</b> চাপুন → পপ-আপে কোডটি দেখাবে, এমন দেখতে:<br>
+<span class="origin" style="border-color:#00897b;background:#e0f2f0;color:#00564c">123456789-abcdef123456.apps.googleusercontent.com</span>
+পুরোটা <b>কপি</b> করে রাখুন (লম্বা চেপে ধরে Copy, বা কোডের পাশের 📋 আইকন)। এটাই আপনার কোড!</div></div>
+</div>
+
+<!-- ============ ধাপ ৫ ============ -->
+<h2>📱 ধাপ ৫ — কোডটি অ্যাপে বসানো (১ মিনিট)</h2>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>অ্যাপ খুলুন → আরও → সেটিংস</b> → নিচে স্ক্রল করুন → <b>"☁️ গুগল ড্রাইভ অটো-ব্যাকআপ"</b> অংশ</div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>Google OAuth Client ID</b> ঘরে কোডটি পেস্ট করুন → <b>সংরক্ষণ করুন</b> → ✅ দেখাবে</div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>ঠিক আছে কি না পরীক্ষা করুন:</b>
+<b>আরও → ব্যাকআপ ও রিস্টোর → "☁️ ড্রাইভে ব্যাকআপ দিন"</b> চাপুন</div></div>
+</div>
+
+<h3>🔓 প্রথমবার গুগল অনুমতি চাইবে — ভয় পাবেন না</h3>
+<div class="card">
+<div class="step"><div class="n">১</div><div class="b"><b>অ্যাকাউন্ট বাছাই</b> — যে জিমেইল দিয়ে Test user যোগ করেছেন সেটি বাছুন</div></div>
+<div class="step"><div class="n">২</div><div class="b"><b>"Google hasn't verified this app" লেখা দেখালে:</b><br>
+এটা স্বাভাবিক — ব্যক্তিগত অ্যাপ গুগল ভেরিফাই করে না।<br>
+→ <b>Advanced</b> চাপুন → <b>Go to Amar Hishab (unsafe)</b> চাপুন → এগিয়ে যান। বিপদের কিছু নেই — অ্যাপটা তো আপনার নিজের!</div></div>
+<div class="step"><div class="n">৩</div><div class="b"><b>অনুমতি দিন</b> — তালিকায় "See, edit, create... files in your Google Drive" দেখাবে (শুধু অ্যাপের নিজের ব্যাকআপ ফাইলটুকু ছোঁয়ার অনুমতি) → <b>Continue / Allow</b> চাপুন</div></div>
+<div class="step"><div class="n">৪</div><div class="b"><b>ব্যস!</b> — "✅ ব্যাকআপ সফল!" দেখাবে। আপনার ড্রাইভে <span class="path">amar-hishab-backup.json</span> নামে ফাইলটি চলে গেছে।</div></div>
+</div>
+
+<!-- ============ ধাপ ৬ ============ -->
+<h2>✅ ব্যাকআপ ফাইলটি ড্রাইভে কোথায় আছে?</h2>
+<div class="card">
+<p>ফোনের <b>গুগল ড্রাইভ অ্যাপ</b> খুলুন (বা <span class="path">drive.google.com</span>) → <b>My Drive / আমার ড্রাইভ</b>-এ সরাসরি <span class="path">amar-hishab-backup.json</span> ফাইলটি থাকবে। না পেলে ড্রাইভের সার্চে লিখুন <span class="kbd">amar-hishab</span>।</p>
+</div>
+
+<h2>🔄 নতুন ফোনে / হিসাব ফিরিয়ে আনতে (রিস্টোর)</h2>
+<div class="card">
+<ol>
+<li>নতুন ফোনে অ্যাপ খুলুন (হোম স্ক্রিনে বসিয়ে বা লিংক দিয়ে)</li>
+<li><b>আরও → সেটিংস</b>-এ আবার একই <b>Client ID</b> বসান (একবারই লাগবে)</li>
+<li><b>আরও → ব্যাকআপ ও রিস্টোর → "☁️ ড্রাইভ থেকে রিস্টোর করুন"</b> → একই জিমেইল বাছুন → ব্যাকআপের তারিখ দেখে <b>নিশ্চিত</b> করুন</li>
+<li>সব হিসাব হুবহু ফিরে আসবে ✅</li>
+</ol>
+</div>
+
+<h2>🤖 অটো-ব্যাকআপ রিমাইন্ডার (নতুন ফিচার)</h2>
+<div class="good">অ্যাপে এখন নিজেই খেয়াল রাখে: Client ID দেওয়ার পর যদি <b>২০+ ঘণ্টা</b> ব্যাকআপ না নেন, হোমপেজের উপরে সবুজ কার্ডে মনে করিয়ে দেবে — <b>"☁️ এখনই ব্যাকআপ দিন"</b> বাটনে এক ট্যাপেই সেরা। চাইলে সেটিংস থেকে রিমাইন্ডারটি বন্ধও করা যায়। প্রতিদিন রাতে এক ট্যাপ — এটাই অভ্যাস করুন।</div>
+
+<h2>🛠️ সমস্যা হলে (FAQ)</h2>
+<div class="card">
+<div class="q"><b>৪০৩ / access_denied এরর দেখাচ্ছে?</b><br>ধাপ ৩-এর ৪ নম্বর কাজ (Test user যোগ) হয়নি। ফিরে গিয়ে নিজের জিমেইল Test user হিসেবে যোগ করুন।</div>
+<div class="q"><b>400 / origin_mismatch এরর?</b><br>ধাপ ৪-এর ৩ নম্বরে বসানো ঠিকানাটি হুবহু মিলছে না। <span class="path">https://hasanuzzamansumon03.github.io</span> — https সহ, শেষে / ছাড়া, বানান একই রকম কিনা আবার মিলিয়ে দেখুন, ঠিক করে Save করুন।</div>
+<div class="q"><b>বাটনে চাপার পর কিছুই হচ্ছে না / পপ-আপ খুলছে না?</b><br>Chrome-এ পপ-আপ ব্লক হতে পারে — অ্যাড্রেস বারের পাশের আইকনে ট্যাপ করে <b>Pop-ups → Allow</b> করুন। ইন্টারনেট চালু আছে কি নাও দেখুন।</div>
+<div class="q"><b>"invalid_client" এরর?</b><br>Client ID টি পুরোটা কপি হয়নি (শেষে <span class="path">.apps.googleusercontent.com</span> পর্যন্ত পুরোটা লাগবে)। আবার কপি করে সেটিংসে বসান।</div>
+<div class="q"><b>Credentials/Clients মেনুতে ঢোকার পর কিছু বানাতে দিচ্ছে না?</b><br>আগে ধাপ ৩ (OAuth consent/Auth) সম্পূর্ন করতে হবে — তারপর Client বানানো যাবে।</div>
+<div class="q"><b>একাধিক জিমেইল আছে, কোনটা দেব?</b><br>যে জিমেইলের ড্রাইভে ব্যাকআপ রাখতে চান — Cloud Console-এ, Test user-এ এবং ফোনের অনুমতির সময় <b>একই জিমেইল</b> ব্যবহার করুন।</div>
+<div class="q"><b>টাকা কাটবে কোনোদিন?</b><br>না। এই ব্যক্তিগত ব্যবহারের জন্য গুগল ফ্রি কোটা অনেক বড় — দিনে শত শত ব্যাকআপেও ছোঁবে না। কার্ডও লাগে না।</div>
+</div>
+
+<h2>✅ চূড়ান্ত চেকলিস্ট</h2>
+<div class="card">
+<ol>
+<li>☐ Amar Hishab নামে প্রজেক্ট তৈরি হয়েছে</li>
+<li>☐ Google Drive API চালু হয়েছে (Enable)</li>
+<li>☐ OAuth তে App name দেওয়া + নিজের জিমেইল Test user যোগ হয়েছে</li>
+<li>☐ Web application ধরনে Client ID তৈরি + origin-এ <span class="path">https://hasanuzzamansumon03.github.io</span> বসানো</li>
+<li>☐ Client ID অ্যাপের সেটিংসে বসানো ও সংরক্ষিত</li>
+<li>☐ প্রথম ব্যাকআপ সফল — ড্রাইভে amar-hishab-backup.json দেখা যাচ্ছে</li>
+</ol>
+<p class="mut">সব ✅ হলে আপনার হিসাব এখন থেকে চিরসুরক্ষিত! প্রতিদিন রাতে এক ট্যাপ — ব্যস।</p>
+</div>
+
+<footer>☁️ আমার হিসাব — গুগল ড্রাইভ ব্যাকআপ সেটআপ গাইড v1.0<br>কোথাও আটকে গেলে চ্যাটে জানান — কোন ধাপে কী দেখছেন লিখলেই সমাধান পাবেন।</footer>
+</div>
+</body>
+</html>
