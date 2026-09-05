@@ -565,10 +565,16 @@ return '<div class="lrow"><div class="lt"><b>'+esc(w?w.name:t.wkey)+' — '+(ty?
 +'<small>'+fmtDate(t.date)+(t.cust?' • '+esc(t.cust):'')+(t.note?' • '+esc(t.note):'')+'</small></div>'
 +'<div class="rt"><b>'+fmt(t.amount)+'</b>'+((t.comm||0)>0?'<small class="grn">কমিশন +'+fmt(t.comm)+'</small>':'')+((t.fee||0)>0?'<small class="red">ফি −'+fmt(t.fee)+'</small>':'')+'</div>'
 +'<button class="del" onclick="delWtxn(\''+t.id+'\')">🗑</button></div>'}).join(''):'<div class="empty">কোনো লেনদেন নেই</div>')+'</div>'}
-else if((cur.rsub||'flex')==='card'){renderCardSection(g)}
+else{
+g.innerHTML='<div class="seg" style="margin:0 0 11px">'
++'<button class="segb'+((cur.rsub||'flex')==='flex'?' on':'')+'" onclick="setRsub(\'flex\')">⚡ ফ্লেক্সিলোড</button>'
++'<button class="segb'+((cur.rsub||'flex')==='card'?' on':'')+'" onclick="setRsub(\'card\')">🎫 রিচার্জ কার্ড</button>'
++'</div><div id="rsub"></div>';
+const g2=el('rsub');
+if((cur.rsub||'flex')==='card'){renderCardSection(g2)}
 else{
 const txs=S.rechTxns.slice().reverse().slice(0,40);
-g.innerHTML=''
+g2.innerHTML=''
 +S.operators.map(o=>{const tm=S.rechTxns.filter(t=>t.op===o.key&&t.date===TD);const tc=t2(tm.reduce((a,t)=>a+(t.comm||0),0));
 return '<div class="card"><div class="lrow" style="border:none;padding-top:0"><div class="lt"><b>'+esc(o.name)+'</b><small>কমিশন '+bn(o.rate)+'৳ / হাজার রিচার্জে</small></div>'
 +'<div class="rt"><small class="mut">ব্যালান্স</small><b>'+fmt(opBal(o.key))+'</b><small class="grn">আজ '+fmt(tc)+'</small></div></div>'
@@ -581,7 +587,7 @@ return '<div class="card"><div class="lrow" style="border:none;padding-top:0"><d
 return '<div class="lrow"><div class="lt"><b>'+esc(o?o.name:t.op)+' — '+(ty?ty.lbl:t.type)+'</b>'
 +'<small>'+fmtDate(t.date)+(t.phone?' • '+esc(t.phone):'')+'</small></div>'
 +'<div class="rt"><b>'+fmt(t.amount)+'</b>'+((t.comm||0)>0?'<small class="grn">কমিশন +'+fmt(t.comm)+'</small>':'')+'</div>'
-+'<button class="del" onclick="delRtxn(\''+t.id+'\')">🗑</button></div>'}).join(''):'<div class="empty">কোনো রিচার্জ নেই</div>')+'</div>'}}
++'<button class="del" onclick="delRtxn(\''+t.id+'\')">🗑</button></div>'}).join(''):'<div class="empty">কোনো রিচার্জ নেই</div>')+'</div>'}}}
 
 /* ---------- ব্যাংকিং লেনদেন ---------- */
 function openWalletTxnModal(wkey){wkey=wkey||(S.wallets[0]&&S.wallets[0].key);if(!wkey)return;
