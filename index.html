@@ -380,7 +380,7 @@ if(cur.gsub==='sale'){const list=S.sales.slice().reverse().slice(0,50);
 g.innerHTML='<button class="btn" style="margin-bottom:11px" onclick="openSaleModal()">＋ নতুন বিক্রয়</button>'
 +(list.length?'<div class="card" style="padding:4px 14px">'+list.map(s=>'<div class="lrow"><div class="lt"><b>'+esc(s.items[0].name)+(s.items.length>1?' +'+bn(s.items.length-1)+' আইটেম':'')+'</b>'
 +'<small>'+fmtDate(s.date)+' • লাভ '+fmt(s.profit)+(s.partyId?' • '+esc(partyName(s.partyId)):'')+(s.due>0?' • <span class="red">বাকি '+fmt(s.due)+'</span>':'')+'</small></div>'
-+'<div class="rt"><b>'+fmt(s.total)+'</b></div><button class="del" onclick="delSale(\''+s.id+'\')">🗑</button></div>').join('')+'</div>'
++'<div class="rt"><b>'+fmt(s.total)+'</b></div><button class="del" onclick="openSaleModal(\''+s.id+'\')">✏️</button><button class="del" onclick="delSale(\''+s.id+'\')">🗑</button></div>').join('')+'</div>'
 :'<div class="card"><div class="empty">এখনো কোনো বিক্রয় নেই।<br>"＋ নতুন বিক্রয়" চাপুন।</div></div>')}
 if(cur.gsub==='stock'){const sv=stockValue();
 const unpriced=S.products.filter(p=>!p.buyPrice||!p.sellPrice).length;
@@ -402,18 +402,18 @@ g.innerHTML='<div class="card"><div class="ch">📋 অর্ডার খাত
 +pend.map(o=>'<div class="lrow"><div class="lt"><b>'+esc(o.title)+'</b><small>'+fmtDate(o.date)+(o.supplier?' • '+esc(o.supplier):'')+(o.note?' • '+esc(o.note):'')+'</small></div>'
 +'<div class="rt"><b>'+fmt(o.amount)+'</b></div>'
 +'<button class="btn sm" onclick="receiveOrder(\''+o.id+'\')">✓ রিসিভ</button>'
-+'<button class="del" onclick="delOrder(\''+o.id+'\')">🗑</button></div>').join('')
++'<button class="del" onclick="openOrderModal(\''+o.id+'\')">✏️</button><button class="del" onclick="delOrder(\''+o.id+'\')">🗑</button></div>').join('')
 :'<div class="empty">কোনো অর্ডার বাকি নেই — আগের দিন অর্ডার লিখে রাখুন, পরের দিন মাল এলে "✓ রিসিভ" চাপুন</div>')
 +(recv.length?'<h4 class="sec">সম্প্রতি রিসিভ হয়েছে</h4>'+recv.map(o=>'<div class="lrow"><div class="lt"><b>'+esc(o.title)+'</b><small>'+fmtDate(o.receivedDate||o.date)+' ✓</small></div><b class="mut">'+fmt(o.amount)+'</b></div>').join(''):'')
 +'</div>'
 +'<button class="btn" style="margin-bottom:11px" onclick="openPurchaseModal()">＋ নতুন ক্রয় (মাল এলে)</button>'
 +(list.length?'<div class="card" style="padding:4px 14px">'+list.map(u=>'<div class="lrow"><div class="lt"><b>'+esc(u.name)+'</b><small>'+fmtDate(u.date)+' • '+bn(u.qty)+' '+esc(u.unit)+' × '+fmt(u.unitCost)+(u.partyId?' • '+esc(partyName(u.partyId)):'')+'</small></div>'
 +'<div class="rt"><b>'+fmt(u.total)+'</b>'+(u.due>0?'<small class="red">বাকি '+fmt(u.due)+'</small>':'<small class="mut">পরিশোধিত</small>')+'</div>'
-+'<button class="del" onclick="delPurchase(\''+u.id+'\')">🗑</button></div>').join('')+'</div>'
++'<button class="del" onclick="openPurchaseModal(null,\''+u.id+'\')">✏️</button><button class="del" onclick="delPurchase(\''+u.id+'\')">🗑</button></div>').join('')+'</div>'
 :'<div class="card"><div class="empty">কোনো ক্রয় এন্ট্রি নেই।</div></div>')}
 if(cur.gsub==='exp'){const list=S.expenses.slice().reverse().slice(0,50);
 g.innerHTML='<button class="btn" style="margin-bottom:11px" onclick="openExpenseModal()">＋ নতুন খরচ</button>'
-+(list.length?'<div class="card" style="padding:4px 14px">'+list.map(e=>'<div class="lrow"><div class="lt"><b>'+esc(e.title)+'</b><small>'+fmtDate(e.date)+' • <span class="badge b-teal">'+EX_CAT[e.cat]+'</span></small></div><div class="rt"><b class="red">'+fmt(e.amount)+'</b></div><button class="del" onclick="delExpense(\''+e.id+'\')">🗑</button></div>').join('')+'</div>'
++(list.length?'<div class="card" style="padding:4px 14px">'+list.map(e=>'<div class="lrow"><div class="lt"><b>'+esc(e.title)+'</b><small>'+fmtDate(e.date)+' • <span class="badge b-teal">'+EX_CAT[e.cat]+'</span></small></div><div class="rt"><b class="red">'+fmt(e.amount)+'</b></div><button class="del" onclick="openExpenseModal(\''+e.id+'\')">✏️</button><button class="del" onclick="delExpense(\''+e.id+'\')">🗑</button></div>').join('')+'</div>'
 :'<div class="card"><div class="empty">কোনো খরচ নেই।</div></div>')}}
 
 function searchStock(v){cur.stockQ=v;renderStockList()}
@@ -455,18 +455,41 @@ if(id){const p=S.products.find(x=>x.id===id);Object.assign(p,o)}else{S.products.
 save();closeModal();toast('পণ্য সংরক্ষিত ✅');renderView()}
 
 /* ---------- বিক্রয় (ঝুড়ি/কার্ট) ---------- */
-function openSaleModal(){cur.cart=[];
+function openSaleModal(editId){const s=editId?S.sales.find(x=>x.id===editId):null;if(editId&&!s)return;cur.editId=editId||'';
+cur.cart=s?s.items.map(i=>({pid:i.pid,qty:i.qty})):[];
 const custs=S.parties.filter(p=>p.type==='cust');
-openModal('🛒 নতুন বিক্রয় (মুদি)',
+openModal(s?'✏️ বিক্রয় সংশোধন':'🛒 নতুন বিক্রয় (মুদি)',
 '<input class="inp" id="sf_q" placeholder="🔍 পণ্যের নাম লিখে খুঁজুন" oninput="renderSaleList()" style="margin-bottom:8px">'
 +'<div id="sf_list" style="max-height:190px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:2px 10px"></div>'
 +'<div id="sf_cart" style="margin-top:10px"></div>'
 +'<label class="lbl">খাতায় বিক্রয় করলে গ্রাহক বাছুন (বাকির জন্য)</label>'
 +'<select class="inp" id="sf_party"><option value="">— নগদ বিক্রয় (বাকি নয়) —</option>'+custs.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('')+'</select>'
 +'<div class="row2"><div><label class="lbl">গ্রাহক কত নগদ দিল? ৳</label><input class="inp" id="sf_paid" type="number" inputmode="decimal" placeholder="খালি = পুরো টাকা নগদ"></div>'
-+'<div><label class="lbl">তারিখ</label><input class="inp" id="sf_date" type="date" value="'+bizToday()+'"></div></div>',
-'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveSale()">✅ বিক্রয় সম্পন্ন</button>');
-renderSaleList();renderCart()}
++'<div><label class="lbl">তারিখ</label><input class="inp" id="sf_date" type="date" value="'+(s?s.date:bizToday())+'"></div></div>',
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveSale()">'+(s?'✅ সংশোধন সংরক্ষণ':'✅ বিক্রয় সম্পন্ন')+'</button>');
+renderSaleList();renderCart();
+if(s){el('sf_party').value=s.partyId||'';el('sf_paid').value=s.paid;el('sf_date').value=s.date}}
+function saveSale(){if(!cur.cart.length)return toast('অন্তত একটি পণ্য যোগ করুন');
+const editId=cur.editId||'';const old=editId?S.sales.find(x=>x.id===editId):null;
+const oldQty={};if(old)old.items.forEach(i=>oldQty[i.pid]=(oldQty[i.pid]||0)+i.qty);
+const items=[];let total=0,cost=0;
+for(const i of cur.cart){const p=S.products.find(x=>x.id===i.pid);if(!p)continue;
+const avail=(p.stockQty||0)+(oldQty[p.id]||0);
+if(i.qty>avail)return toast(p.name+': স্টকে মাত্র '+bn(avail)+' '+p.unit+' আছে!');
+items.push({pid:p.id,name:p.name,unit:p.unit,qty:i.qty,buy:p.buyPrice,sell:p.sellPrice});total+=p.sellPrice*i.qty;cost+=p.buyPrice*i.qty}
+total=t2(total);cost=t2(cost);const date=el('sf_date').value||bizToday();
+const paidRaw=el('sf_paid').value;const paid=paidRaw===''?total:t2(paidRaw);const due=t2(Math.max(0,total-paid));
+const partyId=el('sf_party').value||'';
+if(old){old.items.forEach(i=>{const p=S.products.find(x=>x.id===i.pid);if(p)p.stockQty=t2(p.stockQty+i.qty)});
+old.items=items;old.total=total;old.cost=cost;old.profit=t2(total-cost);old.paid=paid;old.due=due;old.partyId=partyId;old.date=date;
+S.partyTxns=S.partyTxns.filter(t=>t.saleId!==old.id);
+if(partyId&&due>0)S.partyTxns.push({id:uid(),ts:Date.now(),date:date,partyId:partyId,kind:'due',amount:due,cash:0,note:'বাকি বিক্রয়',saleId:old.id});
+cur.editId=''}
+else{const id=uid();
+S.sales.push({id:id,ts:Date.now(),date:date,items:items,total:total,cost:cost,profit:t2(total-cost),paid:paid,due:due,partyId:partyId});
+if(partyId&&due>0)S.partyTxns.push({id:uid(),ts:Date.now(),date:date,partyId:partyId,kind:'due',amount:due,cash:0,note:'বাকি বিক্রয়',saleId:id})}
+items.forEach(i=>{const p=S.products.find(x=>x.id===i.pid);if(p)p.stockQty=t2(p.stockQty-i.qty)});
+save();closeModal();toast(editId?'বিক্রয় সংশোধিত ✅ লাভ: '+fmt(total-cost):'বিক্রয় সম্পন্ন! লাভ: '+fmt(total-cost));renderView()}
 function renderSaleList(){const q=(el('sf_q').value||'').trim();const list=S.products.filter(p=>!q||p.name.indexOf(q)>=0);
 el('sf_list').innerHTML=list.length?list.map(p=>'<div class="lrow"><div class="lt"><b>'+esc(p.name)+'</b><small>স্টক '+bn(p.stockQty)+' '+esc(p.unit)+' • বিক্রয় '+fmt(p.sellPrice)+'</small></div><button class="btn sm" onclick="addCart(\''+p.id+'\')">＋</button></div>').join(''):'<div class="empty">পণ্য পাওয়া যায়নি — আগে "স্টক" ট্যাবে পণ্য যোগ করুন</div>'}
 function addCart(pid){const p=S.products.find(x=>x.id===pid);if(!p)return;const it=cur.cart.find(c=>c.pid===pid);if(it)it.qty++;else cur.cart.push({pid:pid,qty:1});renderCart()}
@@ -477,36 +500,43 @@ box.innerHTML=cur.cart.length?'<div class="card" style="background:#e9f5f2;paddi
 +cur.cart.map(i=>{const p=S.products.find(x=>x.id===i.pid);if(!p)return '';return '<div class="lrow"><div class="lt"><b>'+esc(p.name)+'</b><small>'+fmt(p.sellPrice)+' × '+bn(i.qty)+' = '+fmt(p.sellPrice*i.qty)+'</small></div>'
 +'<div class="stepper"><button onclick="chCart(\''+i.pid+'\',-1)">−</button><b>'+bn(i.qty)+'</b><button onclick="chCart(\''+i.pid+'\',1)">＋</button></div></div>'}).join('')
 +'<div class="lrow"><div class="lt"><b>সর্বমোট</b></div><b>'+fmt(ct.t)+'</b></div><small class="grn">💰 সম্ভাব্য লাভ ≈ '+fmt(ct.t-ct.c)+'</small></div>':''}
-function saveSale(){if(!cur.cart.length)return toast('অন্তত একটি পণ্য যোগ করুন');
-const items=[];let total=0,cost=0;
-for(const i of cur.cart){const p=S.products.find(x=>x.id===i.pid);if(!p)continue;
-if(i.qty>p.stockQty)return toast(p.name+': স্টকে মাত্র '+bn(p.stockQty)+' '+p.unit+' আছে!');
-items.push({pid:p.id,name:p.name,unit:p.unit,qty:i.qty,buy:p.buyPrice,sell:p.sellPrice});total+=p.sellPrice*i.qty;cost+=p.buyPrice*i.qty}
-total=t2(total);cost=t2(cost);const date=el('sf_date').value||bizToday();
-const paidRaw=el('sf_paid').value;const paid=paidRaw===''?total:t2(paidRaw);const due=t2(Math.max(0,total-paid));
-const partyId=el('sf_party').value||'';const id=uid();
-S.sales.push({id:id,ts:Date.now(),date:date,items:items,total:total,cost:cost,profit:t2(total-cost),paid:paid,due:due,partyId:partyId});
-items.forEach(i=>{const p=S.products.find(x=>x.id===i.pid);if(p)p.stockQty=t2(p.stockQty-i.qty)});
-if(partyId&&due>0)S.partyTxns.push({id:uid(),ts:Date.now(),date:date,partyId:partyId,kind:'due',amount:due,cash:0,note:'বাকি বিক্রয়',saleId:id});
-save();closeModal();toast('বিক্রয় সম্পন্ন! লাভ: '+fmt(total-cost));renderView()}
 function delSale(id){confirmBox('এই বিক্রয় মুছলে স্টক ফেরত যাবে ও সংশ্লিষ্ট বাকি খাতার এন্ট্রি মুছে যাবে। মুছে ফেলবেন?',()=>{
 const s=S.sales.find(x=>x.id===id);if(s){s.items.forEach(i=>{const p=S.products.find(x=>x.id===i.pid);if(p)p.stockQty=t2(p.stockQty+i.qty)});
 S.partyTxns=S.partyTxns.filter(t=>t.saleId!==id);S.sales=S.sales.filter(x=>x.id!==id);save();renderView();toast('মুছে ফেলা হয়েছে')}})}
 
 /* ---------- ক্রয় (মাল আসা) ---------- */
-function openPurchaseModal(pid){if(!S.products.length)return toast('আগে স্টক ট্যাবে পণ্য যোগ করুন');
-cur.buySel=pid||'';cur.buyQ='';
+function openPurchaseModal(pid,editId){if(!S.products.length)return toast('আগে স্টক ট্যাবে পণ্য যোগ করুন');
+const u=editId?S.purchases.find(x=>x.id===editId):null;if(editId&&!u)return;cur.editId=editId||'';
+cur.buySel=u?u.pid:(pid||'');cur.buyQ=u?u.name:'';
 const sups=S.parties.filter(p=>p.type==='supp');
-openModal('🚚 স্টক ক্রয় (মাল এলে)',
+openModal(u?'✏️ ক্রয় সংশোধন':'🚚 স্টক ক্রয় (মাল এলে)',
 '<label class="lbl">কোন পণ্য? *</label><div id="pu_pick"></div>'
 +'<div class="row3"><div><label class="lbl">পরিমাণ</label><input class="inp" id="pu_qty" type="number" inputmode="decimal" oninput="puTotal()"></div>'
 +'<div><label class="lbl">একক ক্রয় মূল্য ৳</label><input class="inp" id="pu_rate" type="number" inputmode="decimal" oninput="puTotal()"></div>'
 +'<div><label class="lbl">মোট ৳</label><input class="inp" id="pu_tot" type="number" disabled></div></div>'
 +'<label class="lbl">কত টাকা এখন দিলেন? (খালি রাখলে পুরো নগদ ধরা হবে)</label><input class="inp" id="pu_paid" type="number" inputmode="decimal">'
 +'<label class="lbl">সাপ্লায়ার (বাকি হলে বাছুন)</label><select class="inp" id="pu_sup"><option value="">— নগদ ক্রয় —</option>'+sups.map(s=>'<option value="'+s.id+'">'+esc(s.name)+'</option>').join('')+'</select>'
-+'<label class="lbl">তারিখ</label><input class="inp" id="pu_date" type="date" value="'+bizToday()+'">',
-'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="savePurchase()">✅ ক্রয় সম্পন্ন</button>');
-renderBuyPick()}
++'<label class="lbl">তারিখ</label><input class="inp" id="pu_date" type="date" value="'+(u?u.date:bizToday())+'">',
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="savePurchase()">'+(u?'✅ সংশোধন সংরক্ষণ':'✅ ক্রয় সম্পন্ন')+'</button>');
+renderBuyPick();
+if(u){el('pu_qty').value=u.qty;el('pu_rate').value=u.unitCost;el('pu_paid').value=u.paid;el('pu_sup').value=u.partyId||'';puTotal()}}
+function savePurchase(){const pid=cur.buySel;const p=S.products.find(x=>x.id===pid);
+if(!p)return toast('পণ্য বাছাই করুন — খুঁজে নির্বাচন করুন');
+const editId=cur.editId||'';const old=editId?S.purchases.find(x=>x.id===editId):null;
+const q=+el('pu_qty').value||0,r=+el('pu_rate').value||0;
+if(q<=0)return toast('পণ্য ও পরিমাণ ঠিক করুন');
+const total=t2(q*r);const paidRaw=el('pu_paid').value;const paid=paidRaw===''?total:t2(paidRaw);
+const due=t2(Math.max(0,total-paid));const sup=el('pu_sup').value||'';const date=el('pu_date').value||bizToday();
+if(old){const op=S.products.find(x=>x.id===old.pid);if(op&&op.id!==p.id)op.stockQty=t2(op.stockQty-old.qty);else if(op)p.stockQty=t2(p.stockQty-old.qty);
+old.pid=pid;old.name=p.name;old.unit=p.unit;old.qty=t2(q);old.unitCost=t2(r);old.total=total;old.paid=paid;old.due=due;old.partyId=sup;old.date=date;
+S.partyTxns=S.partyTxns.filter(t=>t.purId!==old.id);
+if(sup&&due>0)S.partyTxns.push({id:uid(),ts:Date.now(),date:date,partyId:sup,kind:'due',amount:due,cash:0,note:'বাকি ক্রয়',purId:old.id});
+cur.editId=''}
+else{const id=uid();
+S.purchases.push({id:id,ts:Date.now(),date:date,pid:pid,name:p.name,unit:p.unit,qty:t2(q),unitCost:t2(r),total:total,paid:paid,due:due,partyId:sup});
+if(sup&&due>0)S.partyTxns.push({id:uid(),ts:Date.now(),date:date,partyId:sup,kind:'due',amount:due,cash:0,note:'বাকি ক্রয়',purId:id})}
+p.stockQty=t2(p.stockQty+q);if(r>0)p.buyPrice=t2(r);
+save();closeModal();toast(editId?'ক্রয় সংশোধিত ✅':'ক্রয় সম্পন্ন ✅');renderView()}
 function renderBuyPick(){const box=el('pu_pick');if(!box)return;
 if(cur.buySel){const p=S.products.find(x=>x.id===cur.buySel);
 if(p){box.innerHTML='<div class="card" style="background:#e9f5f2;margin-bottom:0"><div class="lrow" style="border:none;padding:0"><div class="lt"><b>✅ '+esc(p.name)+'</b><small>স্টকে আছে: '+bn(p.stockQty)+' '+esc(p.unit)+(p.buyPrice?' • ক্রয় '+fmt(p.buyPrice):'')+'</small></div>'
@@ -519,29 +549,22 @@ const q=(cur.buyQ||'').trim();const list=S.products.filter(p=>!q||p.name.indexOf
 box.innerHTML=list.length?list.map(p=>'<div class="lrow"><div class="lt"><b>'+esc(p.name)+'</b><small>স্টক '+bn(p.stockQty)+' '+esc(p.unit)+(p.buyPrice?' • ক্রয় '+fmt(p.buyPrice):'')+'</small></div><button class="btn sm" onclick="selectBuyProd(\''+p.id+'\')">নির্বাচন</button></div>').join(''):'<div class="empty">পণ্য পাওয়া যায়নি — বানান মিলিয়ে দেখুন</div>'}
 function selectBuyProd(pid){cur.buySel=pid;renderBuyPick()}
 function puTotal(){const q=+el('pu_qty').value||0,r=+el('pu_rate').value||0;el('pu_tot').value=t2(q*r)}
-function savePurchase(){const pid=cur.buySel;const p=S.products.find(x=>x.id===pid);
-if(!p)return toast('পণ্য বাছাই করুন — খুঁজে নির্বাচন করুন');
-const q=+el('pu_qty').value||0,r=+el('pu_rate').value||0;
-if(!p||q<=0)return toast('পণ্য ও পরিমাণ ঠিক করুন');
-const total=t2(q*r);const paidRaw=el('pu_paid').value;const paid=paidRaw===''?total:t2(paidRaw);
-const due=t2(Math.max(0,total-paid));const sup=el('pu_sup').value||'';const date=el('pu_date').value||bizToday();const id=uid();
-p.stockQty=t2(p.stockQty+q);if(r>0)p.buyPrice=t2(r);
-S.purchases.push({id:id,ts:Date.now(),date:date,pid:pid,name:p.name,unit:p.unit,qty:q,unitCost:t2(r),total:total,paid:paid,due:due,partyId:sup});
-if(sup&&due>0)S.partyTxns.push({id:uid(),ts:Date.now(),date:date,partyId:sup,kind:'due',amount:due,cash:0,note:'বাকি ক্রয়',purId:id});
-save();closeModal();toast('ক্রয় সম্পন্ন ✅');renderView()}
-function openOrderModal(){openModal('📋 নতুন অর্ডার (আগের দিনের অর্ডার লিখে রাখুন)',
+function openOrderModal(editId){const o=editId?S.orders.find(x=>x.id===editId):null;cur.editId=editId||'';
+openModal(o?'✏️ অর্ডার সংশোধন':'📋 নতুন অর্ডার (আগের দিনের অর্ডার লিখে রাখুন)',
 '<small class="mut" style="display:block;margin-bottom:8px">এটি শুধু মনে রাখার খাতা — টাকা/স্টকের হিসাবে কোনো পরিবর্তন হবে না। মাল এলে "✓ রিসিভ" চাপুন, তারপর স্বাভাবিক "স্টক ক্রয়" এন্ট্রি দিন।</small>'
-+'<label class="lbl">কী কী পণ্য? *</label><input class="inp" id="od_title" placeholder="যেমন: ৫ বস্তা চাল, ২ কার্টন তেল, চানাচুর ১০ কেজি...">'
-+'<div class="row2"><div><label class="lbl">প্রায় কত টাকার? *</label><input class="inp" id="od_amt" type="number" inputmode="decimal"></div>'
-+'<div><label class="lbl">তারিখ</label><input class="inp" id="od_date" type="date" value="'+bizToday()+'"></div></div>'
-+'<label class="lbl">কোন কোম্পানি/সাপ্লায়ার? (ঐচ্ছিক)</label><input class="inp" id="od_sup" placeholder="যেমন: প্রাণ, এসিএমই, আব্দুল করিম">'
-+'<label class="lbl">মন্তব্য (ঐচ্ছিক)</label><input class="inp" id="od_note">',
-'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveOrder()">অর্ডার সংরক্ষণ করুন</button>')}
++'<label class="lbl">কী কী পণ্য? *</label><input class="inp" id="od_title" value="'+(o?esc(o.title):'')+'" placeholder="যেমন: ৫ বস্তা চাল, ২ কার্টন তেল, চানাচুর ১০ কেজি...">'
++'<div class="row2"><div><label class="lbl">প্রায় কত টাকার? *</label><input class="inp" id="od_amt" type="number" inputmode="decimal" value="'+(o?o.amount:'')+'"></div>'
++'<div><label class="lbl">তারিখ</label><input class="inp" id="od_date" type="date" value="'+(o?o.date:bizToday())+'"></div></div>'
++'<label class="lbl">কোন কোম্পানি/সাপ্লায়ার? (ঐচ্ছিক)</label><input class="inp" id="od_sup" value="'+(o?esc(o.supplier||''):'')+'" placeholder="যেমন: প্রাণ, এসিএমই, আব্দুল করিম">'
++'<label class="lbl">মন্তব্য (ঐচ্ছিক)</label><input class="inp" id="od_note" value="'+(o?esc(o.note||''):'')+'">',
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveOrder()">'+(o?'✅ সংশোধন সংরক্ষণ':'অর্ডার সংরক্ষণ করুন')+'</button>')}
 function saveOrder(){const title=el('od_title').value.trim();const amt=+el('od_amt').value||0;
 if(!title)return toast('কী পণ্য লিখুন');if(amt<=0)return toast('প্রায় কত টাকার অর্ডার সেটা লিখুন');
 if(!S.orders)S.orders=[];
-S.orders.push({id:uid(),ts:Date.now(),date:el('od_date').value||bizToday(),title:title,amount:t2(amt),supplier:el('od_sup').value.trim(),note:el('od_note').value.trim(),status:'pending',receivedDate:''});
-save();closeModal();renderView();toast('অর্ডার লিখে রাখা হয়েছে 📋')}
+const rec={date:el('od_date').value||bizToday(),title:title,amount:t2(amt),supplier:el('od_sup').value.trim(),note:el('od_note').value.trim()};
+if(cur.editId){const o=S.orders.find(x=>x.id===cur.editId);if(o)Object.assign(o,rec);cur.editId='';toast('অর্ডার সংশোধিত ✅')}
+else{S.orders.push(Object.assign({id:uid(),ts:Date.now(),status:'pending',receivedDate:''},rec));toast('অর্ডার লিখে রাখা হয়েছে 📋')}
+save();closeModal();renderView()}
 function receiveOrder(id){confirmBox('অর্ডারটি রিসিভ (মাল এসেছে) হিসেবে চিহ্নিত করবেন?',()=>{
 const o=S.orders.find(x=>x.id===id);if(!o)return;
 o.status='received';o.receivedDate=bizToday();save();renderView();
@@ -552,18 +575,20 @@ const u=S.purchases.find(x=>x.id===id);if(u){const p=S.products.find(x=>x.id===u
 S.partyTxns=S.partyTxns.filter(t=>t.purId!==id);S.purchases=S.purchases.filter(x=>x.id!==id);save();renderView()}})}
 
 /* ---------- খরচ ---------- */
-function openExpenseModal(){openModal('🧾 নতুন খরচ',
+function openExpenseModal(id){const e=id?S.expenses.find(x=>x.id===id):null;cur.editId=id||'';
+openModal(e?'✏️ খরচ সংশোধন':'🧾 নতুন খরচ',
 '<label class="lbl">কোন ব্যবসার খরচ?</label><select class="inp" id="ex_cat">'
-+'<option value="grocery">🛒 মুদি দোকান</option><option value="mfs">💸 মোবাইল ব্যাংকিং</option><option value="rech">📶 মোবাইল রিচার্জ</option><option value="common">🏠 সাধারণ (ভাড়া, বিদ্যুৎ — সব ব্যবসার)</option></select>'
-+'<label class="lbl">খরচের বিবরণ</label><input class="inp" id="ex_title" placeholder="যেমন: চা-নাস্তা, দোকান ভাড়া, পরিবহন">'
-+'<div class="row2"><div><label class="lbl">টাকা *</label><input class="inp" id="ex_amt" type="number" inputmode="decimal"></div>'
-+'<div><label class="lbl">তারিখ</label><input class="inp" id="ex_date" type="date" value="'+bizToday()+'"></div></div>',
-'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveExpense()">সংরক্ষণ করুন</button>')}
++'<option value="grocery"'+(e&&e.cat==='grocery'?' selected':'')+'>🛒 মুদি দোকান</option><option value="mfs"'+(e&&e.cat==='mfs'?' selected':'')+'>💸 মোবাইল ব্যাংকিং</option><option value="rech"'+(e&&e.cat==='rech'?' selected':'')+'>📶 মোবাইল রিচার্জ</option><option value="common"'+(e&&e.cat==='common'?' selected':'')+'>🏠 সাধারণ (ভাড়া, বিদ্যুৎ — সব ব্যবসার)</option></select>'
++'<label class="lbl">খরচের বিবরণ</label><input class="inp" id="ex_title" value="'+(e?esc(e.title):'')+'" placeholder="যেমন: চা-নাস্তা, দোকান ভাড়া, পরিবহন">'
++'<div class="row2"><div><label class="lbl">টাকা *</label><input class="inp" id="ex_amt" type="number" inputmode="decimal" value="'+(e?e.amount:'')+'"></div>'
++'<div><label class="lbl">তারিখ</label><input class="inp" id="ex_date" type="date" value="'+(e?e.date:bizToday())+'"></div></div>',
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveExpense()">'+(e?'✅ সংশোধন সংরক্ষণ':'সংরক্ষণ করুন')+'</button>')}
 function saveExpense(){const amt=+el('ex_amt').value||0;if(amt<=0)return toast('টাকার পরিমাণ লিখুন');
-S.expenses.push({id:uid(),ts:Date.now(),date:el('ex_date').value||bizToday(),cat:el('ex_cat').value,title:el('ex_title').value||'খরচ',amount:t2(amt)});
-save();closeModal();toast('খরচ যোগ হয়েছে');renderView()}
-function delExpense(id){S.expenses=S.expenses.filter(e=>e.id!==id);save();renderView()}
-/* ================= মোবাইল সার্ভিস (ব্যাংকিং + রিচার্জ) ================= */
+const rec={date:el('ex_date').value||bizToday(),cat:el('ex_cat').value,title:el('ex_title').value||'খরচ',amount:t2(amt)};
+if(cur.editId){const e=S.expenses.find(x=>x.id===cur.editId);if(e)Object.assign(e,rec);cur.editId='';toast('খরচ সংশোধিত ✅')}
+else{S.expenses.push(Object.assign({id:uid(),ts:Date.now()},rec));toast('খরচ যোগ হয়েছে')}
+save();closeModal();renderView()}
+function delExpense(id){confirmBox('এই খরচটি মুছে ফেলবেন?',()=>{S.expenses=S.expenses.filter(e=>e.id!==id);save();renderView();toast('মুছে ফেলা হয়েছে')})}
 function setMsub(s){cur.msub=s;if(cur.tab!=='mobile'){cur.tab='mobile';['home','grocery','mobile','ledger','report','more'].forEach(v=>{const x=el('view-'+v);if(x)x.classList.toggle('on',v==='mobile')});document.querySelectorAll('.nbtn').forEach(b=>b.classList.toggle('on',b.dataset.t==='mobile'))}renderMobile()}
 function renderMobile(){el('view-mobile').innerHTML='<div class="seg">'
 +'<button class="segb'+(cur.msub==='bank'?' on':'')+'" onclick="setMsub(\'bank\')">💸 মোবাইল ব্যাংকিং</button>'
@@ -585,7 +610,7 @@ return '<div class="card"><div class="lrow" style="border:none;padding-top:0"><d
 return '<div class="lrow"><div class="lt"><b>'+esc(w?w.name:t.wkey)+' — '+(ty?ty.lbl.split(' (')[0]:t.type)+'</b>'
 +'<small>'+fmtDate(t.date)+(t.cust?' • '+esc(t.cust):'')+(t.note?' • '+esc(t.note):'')+'</small></div>'
 +'<div class="rt"><b>'+fmt(t.amount)+'</b>'+((t.comm||0)>0?'<small class="grn">কমিশন +'+fmt(t.comm)+'</small>':'')+((t.fee||0)>0?'<small class="red">ফি −'+fmt(t.fee)+'</small>':'')+'</div>'
-+'<button class="del" onclick="delWtxn(\''+t.id+'\')">🗑</button></div>'}).join(''):'<div class="empty">কোনো লেনদেন নেই</div>')+'</div>'}
++'<button class="del" onclick="openWalletTxnModal(null,\''+t.id+'\')">✏️</button><button class="del" onclick="delWtxn(\''+t.id+'\')">🗑</button></div>'}).join(''):'<div class="empty">কোনো লেনদেন নেই</div>')+'</div>'}
 else{
 g.innerHTML='<div class="seg" style="margin:0 0 11px">'
 +'<button class="segb'+((cur.rsub||'flex')==='flex'?' on':'')+'" onclick="setRsub(\'flex\')">⚡ ফ্লেক্সিলোড</button>'
@@ -608,22 +633,24 @@ return '<div class="card"><div class="lrow" style="border:none;padding-top:0"><d
 return '<div class="lrow"><div class="lt"><b>'+esc(o?o.name:t.op)+' — '+(ty?ty.lbl:t.type)+'</b>'
 +'<small>'+fmtDate(t.date)+(t.phone?' • '+esc(t.phone):'')+'</small></div>'
 +'<div class="rt"><b>'+fmt(t.amount)+'</b>'+((t.comm||0)>0?'<small class="grn">কমিশন +'+fmt(t.comm)+'</small>':'')+'</div>'
-+'<button class="del" onclick="delRtxn(\''+t.id+'\')">🗑</button></div>'}).join(''):'<div class="empty">কোনো রিচার্জ নেই</div>')+'</div>'}}}
++'<button class="del" onclick="openRechModal(null,\''+t.id+'\')">✏️</button><button class="del" onclick="delRtxn(\''+t.id+'\')">🗑</button></div>'}).join(''):'<div class="empty">কোনো রিচার্জ নেই</div>')+'</div>'}}}
 
 /* ---------- ব্যাংকিং লেনদেন ---------- */
-function openWalletTxnModal(wkey){wkey=wkey||(S.wallets[0]&&S.wallets[0].key);if(!wkey)return;
-openModal('💸 মোবাইল ব্যাংকিং লেনদেন',
+function openWalletTxnModal(wkey,editId){wkey=wkey||(S.wallets[0]&&S.wallets[0].key);if(!wkey)return;
+const t=editId?S.walletTxns.find(x=>x.id===editId):null;if(editId&&!t)return;cur.editId=editId||'';
+if(t)wkey=t.wkey;
+openModal(t?'✏️ ব্যাংকিং লেনদেন সংশোধন':'💸 মোবাইল ব্যাংকিং লেনদেন',
 '<label class="lbl">সেবার ধরন *</label><select class="inp" id="wt_type" onchange="autoMfs()">'+Object.keys(MFS_TYPES).map(k=>'<option value="'+k+'">'+MFS_TYPES[k].lbl+'</option>').join('')+'</select>'
 +'<label class="lbl">কোন ওয়ালেট?</label><select class="inp" id="wt_w" onchange="autoMfs()">'+S.wallets.map(w=>'<option value="'+w.key+'"'+(w.key===wkey?' selected':'')+'>'+esc(w.name)+' — ব্যালান্স '+fmt(wBal(w.key))+'</option>').join('')+'</select>'
-+'<label class="lbl">টাকার পরিমাণ ৳ *</label><input class="inp" id="wt_amt" type="number" inputmode="decimal" oninput="autoMfs()">'
-+'<div class="row2"><div><label class="lbl">আমার কমিশন (অটো)</label><input class="inp" id="wt_comm" type="number" inputmode="decimal"></div>'
-+'<div><label class="lbl">ফি/চার্জ (অটো)</label><input class="inp" id="wt_fee" type="number" inputmode="decimal"></div></div>'
-+'<label class="lbl">গ্রাহকের নাম/মোবাইল (ঐচ্ছিক)</label><input class="inp" id="wt_cust">'
-+'<label class="lbl">মন্তব্য (ঐচ্ছিক)</label><input class="inp" id="wt_note">'
-+'<label class="lbl">তারিখ</label><input class="inp" id="wt_date" type="date" value="'+bizToday()+'">'
++'<label class="lbl">টাকার পরিমাণ ৳ *</label><input class="inp" id="wt_amt" type="number" inputmode="decimal" oninput="autoMfs()" value="'+(t?t.amount:'')+'">'
++'<div class="row2"><div><label class="lbl">আমার কমিশন (অটো)</label><input class="inp" id="wt_comm" type="number" inputmode="decimal" value="'+(t?(t.comm||0):'')+'"></div>'
++'<div><label class="lbl">ফি/চার্জ (অটো)</label><input class="inp" id="wt_fee" type="number" inputmode="decimal" value="'+(t?(t.fee||0):'')+'"></div></div>'
++'<label class="lbl">গ্রাহকের নাম/মোবাইল (ঐচ্ছিক)</label><input class="inp" id="wt_cust" value="'+(t?esc(t.cust||''):'')+'">'
++'<label class="lbl">মন্তব্য (ঐচ্ছিক)</label><input class="inp" id="wt_note" value="'+(t?esc(t.note||''):'')+'">'
++'<label class="lbl">তারিখ</label><input class="inp" id="wt_date" type="date" value="'+(t?t.date:bizToday())+'">'
 +'<small class="mut" style="display:block;margin-top:6px">💡 কমিশন হাজার প্রতি রেট অনুযায়ী নিজে থেকেই বসে যায় (সেটিংস থেকে রেট বদলান)। দরকার হলে হাতেও ঠিক করতে পারবেন।</small>',
-'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveWtxn()">সংরক্ষণ করুন</button>');
-autoMfs()}
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveWtxn()">'+(t?'✅ সংশোধন সংরক্ষণ':'সংরক্ষণ করুন')+'</button>');
+if(t){el('wt_type').value=t.type;el('wt_amt').value=t.amount}else autoMfs()}
 function autoMfs(){const a=+el('wt_amt').value||0;const w=S.wallets.find(x=>x.key===el('wt_w').value);const ty=MFS_TYPES[el('wt_type').value];
 if(!w||!ty)return;let c=0,f=0;if(ty.comm)c=a/1000*w[ty.comm];if(ty.fee)f=a/1000*w.sf;
 if(el('wt_comm'))el('wt_comm').value=t2(c);if(el('wt_fee'))el('wt_fee').value=t2(f)}
@@ -632,8 +659,10 @@ if(a<=0&&type!=='adjust')return toast('টাকার পরিমাণ লি
 const ty=MFS_TYPES[type];const comm=+el('wt_comm').value||0,fee=+el('wt_fee').value||0;
 const amt=t2(a);let wD,cD;
 if(type==='adjust'){wD=amt;cD=0}else{wD=t2(ty.w*amt+comm-fee);cD=t2(ty.c*amt)}
-S.walletTxns.push({id:uid(),ts:Date.now(),date:el('wt_date').value||bizToday(),wkey:el('wt_w').value,type:type,amount:amt,comm:t2(comm),fee:t2(fee),cust:el('wt_cust').value,note:el('wt_note').value,wD:wD,cD:cD});
-save();closeModal();toast('লেনদেন সংরক্ষিত ✅'+((t2(comm-fee))!==0?' • লাভ '+fmt(t2(comm-fee)):''));renderView()}
+const rec={date:el('wt_date').value||bizToday(),wkey:el('wt_w').value,type:type,amount:amt,comm:t2(comm),fee:t2(fee),cust:el('wt_cust').value,note:el('wt_note').value,wD:wD,cD:cD};
+if(cur.editId){const t=S.walletTxns.find(x=>x.id===cur.editId);if(t)Object.assign(t,rec);cur.editId='';toast('লেনদেন সংশোধিত ✅')}
+else{S.walletTxns.push(Object.assign({id:uid(),ts:Date.now()},rec));toast('লেনদেন সংরক্ষিত ✅'+((t2(comm-fee))!==0?' • লাভ '+fmt(t2(comm-fee)):''))}
+save();closeModal();renderView()}
 function delWtxn(id){confirmBox('এই লেনদেনটি মুছে ফেলবেন?',()=>{S.walletTxns=S.walletTxns.filter(t=>t.id!==id);save();renderView()})}
 function openWAdjust(key){const w=S.wallets.find(x=>x.key===key);
 openModal('⚖️ ব্যালান্স সমন্বয় — '+esc(w.name),
@@ -646,21 +675,25 @@ S.walletTxns.push({id:uid(),ts:Date.now(),date:bizToday(),wkey:key,type:'adjust'
 save();closeModal();toast('সমন্বয় হয়েছে: '+fmt(diff));renderView()}
 
 /* ---------- রিচার্জ ---------- */
-function openRechModal(op){op=op||(S.operators[0]&&S.operators[0].key);if(!op)return;
-openModal('📶 নতুন রিচার্জ',
+function openRechModal(op,editId){op=op||(S.operators[0]&&S.operators[0].key);if(!op)return;
+const t=editId?S.rechTxns.find(x=>x.id===editId):null;if(editId&&!t)return;cur.editId=editId||'';
+if(t)op=t.op;
+openModal(t?'✏️ রিচার্জ সংশোধন':'📶 নতুন রিচার্জ',
 '<label class="lbl">অপারেটর *</label><select class="inp" id="rc_op" onchange="autoRech()">'+S.operators.map(o=>'<option value="'+o.key+'"'+(o.key===op?' selected':'')+'>'+esc(o.name)+' — ব্যালান্স '+fmt(opBal(o.key))+'</option>').join('')+'</select>'
-+'<label class="lbl">রিচার্জের টাকা ৳ *</label><input class="inp" id="rc_amt" type="number" inputmode="decimal" oninput="autoRech()">'
-+'<label class="lbl">আমার কমিশন (হাজার প্রতি রেট অনুযায়ী অটো)</label><input class="inp" id="rc_comm" type="number" inputmode="decimal">'
-+'<label class="lbl">গ্রাহকের মোবাইল নম্বর (ঐচ্ছিক)</label><input class="inp" id="rc_phone" inputmode="tel">'
-+'<label class="lbl">তারিখ</label><input class="inp" id="rc_date" type="date" value="'+bizToday()+'">',
-'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveRech()">✅ রিচার্জ সম্পন্ন</button>');
-autoRech()}
-function autoRech(){const o=S.operators.find(x=>x.key===el('rc_op').value);const a=+el('rc_amt').value||0;
-if(o&&el('rc_comm'))el('rc_comm').value=t2(a/1000*o.rate)}
++'<label class="lbl">রিচার্জের টাকা ৳ *</label><input class="inp" id="rc_amt" type="number" inputmode="decimal" oninput="autoRech()" value="'+(t?t.amount:'')+'">'
++'<label class="lbl">আমার কমিশন (হাজার প্রতি রেট অনুযায়ী অটো)</label><input class="inp" id="rc_comm" type="number" inputmode="decimal" value="'+(t?(t.comm||0):'')+'">'
++'<label class="lbl">গ্রাহকের মোবাইল নম্বর (ঐচ্ছিক)</label><input class="inp" id="rc_phone" inputmode="tel" value="'+(t?esc(t.phone||''):'')+'">'
++'<label class="lbl">তারিখ</label><input class="inp" id="rc_date" type="date" value="'+(t?t.date:bizToday())+'">',
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveRech()">'+(t?'✅ সংশোধন সংরক্ষণ':'✅ রিচার্জ সম্পন্ন')+'</button>');
+if(t){el('rc_op').value=t.op;el('rc_amt').value=t.amount}else autoRech()}
+function autoRech(){const a=+el('rc_amt').value||0;const o=S.operators.find(x=>x.key===el('rc_op').value);if(!o)return;
+if(el('rc_comm'))el('rc_comm').value=t2(a/1000*o.rate)}
 function saveRech(){const a=+el('rc_amt').value||0;if(a<=0)return toast('রিচার্জের টাকা লিখুন');
-const ok=el('rc_op').value;const comm=+el('rc_comm').value||0;
-S.rechTxns.push({id:uid(),ts:Date.now(),date:el('rc_date').value||bizToday(),op:ok,type:'rech',amount:t2(a),comm:t2(comm),phone:el('rc_phone').value,oD:t2(-a),cD:t2(a)});
-save();closeModal();toast('রিচার্জ সংরক্ষিত ✅ কমিশন '+fmt(comm));renderView()}
+const ok2=el('rc_op').value;const comm=+el('rc_comm').value||0;
+const rec={date:el('rc_date').value||bizToday(),op:ok2,type:'rech',amount:t2(a),comm:t2(comm),phone:el('rc_phone').value,oD:t2(-a),cD:t2(a)};
+if(cur.editId){const t=S.rechTxns.find(x=>x.id===cur.editId);if(t)Object.assign(t,rec);cur.editId='';toast('রিচার্জ সংশোধিত ✅ কমিশন '+fmt(comm))}
+else{S.rechTxns.push(Object.assign({id:uid(),ts:Date.now()},rec));toast('রিচার্জ সংরক্ষিত ✅ কমিশন '+fmt(comm))}
+save();closeModal();renderView()}
 function delRtxn(id){confirmBox('এই এন্ট্রিটি মুছে ফেলবেন?',()=>{S.rechTxns=S.rechTxns.filter(t=>t.id!==id);save();renderView()})}
 function openTopupModal(op){op=op||(S.operators[0]&&S.operators[0].key);
 openModal('🚚 টপ-আপ (অপারেটরে ব্যালান্স নেওয়া)',
@@ -716,7 +749,7 @@ return '<div class="card" style="padding:4px 14px"><div class="ch" style="paddin
 +txs.map(t=>{const o=S.operators.find(x=>x.key===t.op);
 return '<div class="lrow"><div class="lt"><b>'+esc(t.name)+'</b><small>'+fmtDate(t.date)+' • '+esc(o?o.name:'')+' • '+bn(t.qty)+' টি'+(t.type==='buy'?' • <span class="badge b-org">কার্ড ক্রয়</span>':'')+'</small></div>'
 +'<div class="rt"><b class="'+(t.type==='buy'?'red':'grn')+'">'+(t.type==='buy'?'−'+fmt(t.total):'+'+fmt(t.total))+'</b>'+(t.type==='sale'?'<small class="grn">লাভ '+fmt(t.profit)+'</small>':'')+'</div>'
-+'<button class="del" onclick="delCardTxn(\''+t.id+'\')">🗑</button></div>'}).join('')+'</div>'}
++'<button class="del" onclick="editCardTxn(\''+t.id+'\')">✏️</button><button class="del" onclick="delCardTxn(\''+t.id+'\')">🗑</button></div>'}).join('')+'</div>'}
 function openCardModal(id){const c=id?S.cards.find(x=>x.id===id):null;
 openModal(c?'✏️ কার্ড এডিট':'🎫 নতুন রিচার্জ কার্ড সেটআপ',
 '<label class="lbl">অপারেটর *</label><select class="inp" id="cd_op">'+S.operators.map(o=>'<option value="'+o.key+'"'+(c&&c.op===o.key?' selected':'')+'>'+esc(o.name)+'</option>').join('')+'</select>'
@@ -776,6 +809,36 @@ if(c){if(t.type==='sale'){c.stockQty=t2(c.stockQty+t.qty)}else{c.stockQty=t2(c.s
 S.cardTxns=S.cardTxns.filter(x=>x.id!==id);save();closeModal();renderView();toast('মুছে ফেলা হয়েছে')})}
 
 /* ================= পাবো-দেবো খাতা ================= */
+
+function editCardTxn(id){const t=S.cardTxns.find(x=>x.id===id);if(!t)return;
+cur.ceT=t;
+if(t.type==='sale'){
+openModal('✏️ কার্ড বিক্রয় সংশোধন — '+esc(t.name),
+'<small class="mut" style="display:block;margin-bottom:8px">কার্ড: '+esc(t.name)+' • ক্রয় '+fmt(t.buy)+'৳ • বিক্রয় '+fmt(t.sell)+'৳ (প্রতি টি)</small>'
++'<div class="row2"><div><label class="lbl">কয়টি বিক্রি হলো? *</label><input class="inp" id="ce_qty" type="number" inputmode="decimal" value="'+t.qty+'" ></div>'
++'<div><label class="lbl">তারিখ</label><input class="inp" id="ce_date" type="date" value="'+t.date+'"></div></div>'
++'<div id="ce_calc" class="mut" style="margin-top:6px"></div>',
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveCardTxnEdit(\''+t.id+'\')">✅ সংশোধন সংরক্ষণ</button>');
+ceCalc(t)}
+else{
+openModal('✏️ কার্ড ক্রয় সংশোধন — '+esc(t.name),
+'<small class="mut" style="display:block;margin-bottom:8px">কার্ড: '+esc(t.name)+' • বর্তমান স্টকে আছে '+bn(S.cards.filter(c=>c.id===t.cardId).reduce((a,c)=>a+c.stockQty,0))+' টি</small>'
++'<div class="row2"><div><label class="lbl">কয়টি এসেছে? *</label><input class="inp" id="ce_qty" type="number" inputmode="decimal" value="'+t.qty+'"></div>'
++'<div><label class="lbl">একক ক্রয় মূল্য ৳</label><input class="inp" id="ce_rate" type="number" inputmode="decimal" value="'+(t.unitCost||0)+'"></div></div>'
++'<label class="lbl">তারিখ</label><input class="inp" id="ce_date" type="date" value="'+t.date+'">',
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveCardTxnEdit(\''+t.id+'\')">✅ সংশোধন সংরক্ষণ</button>')}}
+function ceCalc(){const t=cur.ceT;if(!t)return;const q=+el('ce_qty').value||0;const box=el('ce_calc');if(!box)return;
+box.innerHTML='মোট বিক্রয়: <b>'+fmt(t2(q*t.sell))+'৳</b> • লাভ: <b class="grn">'+fmt(t2(q*(t.sell-t.buy)))+'৳</b>'}
+function saveCardTxnEdit(id){const t=S.cardTxns.find(x=>x.id===id);if(!t)return;const c=S.cards.find(x=>x.id===t.cardId);
+const q=+el('ce_qty').value||0;if(q<=0)return toast('সংখ্যা লিখুন');const date=el('ce_date').value||t.date;
+if(t.type==='sale'){
+if(c){const avail=(c.stockQty||0)+t.qty;if(q>avail)return toast('স্টকে মাত্র '+bn(avail)+' টি সম্ভব (পুরনো এন্ট্রি বাদ দিয়ে)!');c.stockQty=t2(c.stockQty+t.qty-q)}
+t.qty=t2(q);t.total=t2(t.sell*q);t.profit=t2((t.sell-t.buy)*q);t.cD=t.total;t.date=date;toast('কার্ড বিক্রয় সংশোধিত ✅ মোট '+fmt(t.total)+' • লাভ '+fmt(t.profit))}
+else{
+const rate=+el('ce_rate').value||0;const tot=t2(rate*q);
+if(c){if(c.stockQty-t.qty+q<0)return toast('এত কমানো যাবে না — পরে কিছু কার্ড বিক্রি হয়ে গেছে! এখন স্টক '+bn(c.stockQty)+', পুরনো এন্ট্রি '+bn(t.qty));c.stockQty=t2(c.stockQty-t.qty+q);if(rate>0)c.buyPrice=t2(rate)}
+t.qty=t2(q);if(rate>0)t.unitCost=t2(rate);t.total=tot;t.cD=-tot;t.date=date;toast('কার্ড ক্রয় সংশোধিত ✅ স্টক: '+bn(c?c.stockQty:0)+' টি')}
+save();closeModal();renderView()}
 function renderLedger(){const pd=totPaboDibo();
 el('view-ledger').innerHTML='<div class="card"><div class="b3"><div><small>🔵 মোট পাবো</small><b class="grn">'+fmt(pd.po)+'</b></div>'
 +'<div><small>🔴 মোট দেবো</small><b class="red">'+fmt(pd.db)+'</b></div><div><small>মোট হিসাব</small><b>'+bn(S.parties.length)+' জন</b></div></div></div>'
@@ -879,7 +942,7 @@ openModal('📒 '+esc(p.name),
 +'<div style="margin:12px 0 4px"><button class="btn" onclick="openStatement(\''+id+'\')">📄 পূর্ণ স্টেটমেন্ট দেখুন — কবে কবে কত বাকি হয়েছে</button></div>'
 +'<h4 class="sec">সাম্প্রতিক লেনদেন</h4>'
 +(tx.length?tx.map(t=>'<div class="lrow"><div class="lt"><b>'+(t.kind==='due'?(isCust?'বাকি হলো':'দেনা হলো'):(isCust?'পাওনা পেলাম':'দেনা দিলাম'))+'</b><small>'+fmtDate(t.date)+(t.note?' • '+esc(t.note):'')+'</small></div>'
-+'<b class="'+(t.kind==='due'?'red':'grn')+'">'+(t.kind==='due'?'+':'−')+fmt(t.amount)+'</b></div>').join(''):'<div class="empty">কোনো এন্ট্রি নেই</div>'))}
++'<b class="'+(t.kind==='due'?'red':'grn')+'">'+(t.kind==='due'?'+':'−')+fmt(t.amount)+'</b>'+(!t.saleId&&!t.purId?'<button class="del" onclick="editPartyTxn(\''+t.id+'\')">✏️</button><button class="del" onclick="delPartyTxn(\''+t.id+'\')">🗑</button>':'')+'</div>').join(''):'<div class="empty">কোনো এন্ট্রি নেই</div>'))}
 function openSettleModal(id,mode){const p=S.parties.find(x=>x.id===id);
 openModal(mode==='collect'?'✋ পাওনা আদায়':'💸 দেনা পরিশোধ — '+esc(p.name),
 '<label class="lbl">টাকার পরিমাণ ৳ *</label><input class="inp" id="st_amt" type="number" inputmode="decimal">'
@@ -889,6 +952,20 @@ openModal(mode==='collect'?'✋ পাওনা আদায়':'💸 দেন
 function saveSettle(id,mode){const a=+el('st_amt').value||0;if(a<=0)return toast('টাকার পরিমাণ লিখুন');
 S.partyTxns.push({id:uid(),ts:Date.now(),date:el('st_date').value||bizToday(),partyId:id,kind:'settle',amount:t2(a),cash:t2(mode==='collect'?a:-a),note:el('st_note').value});
 save();closeModal();toast(mode==='collect'?'নগদ এসেছে ✅':'নগদ গেছে ✅');renderView()}
+function editPartyTxn(id){const t=S.partyTxns.find(x=>x.id===id);if(!t)return;const p=S.parties.find(x=>x.id===t.partyId);if(!p)return;const isCust=p.type==='cust';
+openModal('✏️ এন্ট্রি সংশোধন — '+esc(p.name),
+'<label class="lbl">ধরন</label><select class="inp" id="pt_kind">'
++'<option value="due"'+(t.kind==='due'?' selected':'')+'>'+(isCust?'বাকি হলো (+পাবো)':'দেনা হলো (+দেবো)')+'</option>'
++'<option value="settle"'+(t.kind==='settle'?' selected':'')+'>'+(isCust?'পাওনা পেলাম (নগদ এলো)':'দেনা দিলাম (নগদ গেল)')+'</option></select>'
++'<label class="lbl">টাকার পরিমাণ ৳ *</label><input class="inp" id="pt_amt" type="number" inputmode="decimal" value="'+t.amount+'">'
++'<label class="lbl">মন্তব্য (ঐচ্ছিক)</label><input class="inp" id="pt_note" value="'+esc(t.note||'')+'">'
++'<label class="lbl">তারিখ</label><input class="inp" id="pt_date" type="date" value="'+t.date+'">',
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="savePartyTxnEdit(\''+t.id+'\')">✅ সংশোধন সংরক্ষণ</button>')}
+function savePartyTxnEdit(id){const t=S.partyTxns.find(x=>x.id===id);if(!t)return;const p=S.parties.find(x=>x.id===t.partyId);if(!p)return;
+const a=+el('pt_amt').value||0;if(a<=0)return toast('টাকার পরিমাণ লিখুন');
+t.kind=el('pt_kind').value;t.amount=t2(a);t.cash=t.kind==='settle'?t2(p.type==='cust'?a:-a):0;t.note=el('pt_note').value;t.date=el('pt_date').value||t.date;
+save();closeModal();renderView();toast('এন্ট্রি সংশোধিত ✅')}
+function delPartyTxn(id){confirmBox('এই এন্ট্রিটি মুছে ফেলবেন? হিসাব স্বয়ংক্রিয়ভাবে ঠিক হয়ে যাবে।',()=>{S.partyTxns=S.partyTxns.filter(t=>t.id!==id);save();renderView();toast('মুছে ফেলা হয়েছে')})}
 function openDueAdd(id){const p=S.parties.find(x=>x.id===id);
 openModal('＋ '+(p.type==='cust'?'বাকি যোগ':'দেনা যোগ')+' — '+esc(p.name),
 '<label class="lbl">টাকার পরিমাণ ৳ *</label><input class="inp" id="dd_amt" type="number" inputmode="decimal">'
