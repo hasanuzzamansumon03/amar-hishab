@@ -150,6 +150,12 @@ const fmt=n=>{n=+n||0;return (n<0?'−৳':'৳')+bnf.format(Math.abs(t2(n)))};
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function todayISO(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function bizToday(){const b=S.biz;if(b&&b.open&&b.date){return b.date}return todayISO()}
+
+function bizTs(v){const t=Date.parse(v||'');return isNaN(t)?0:t}
+function txnTs(t){if(t.ts)return t.ts;const d=Date.parse((t.date||'')+'T12:00:00');return isNaN(d)?0:d}
+function winFilter(arr,from,end){return arr.filter(t=>{const x=txnTs(t);return x>=from&&x<=end})}
+function bizLists(from,end){return{sales:winFilter(S.sales,from,end),purchases:winFilter(S.purchases,from,end),expenses:winFilter(S.expenses,from,end),walletTxns:winFilter(S.walletTxns,from,end),rechTxns:winFilter(S.rechTxns,from,end),cardTxns:winFilter(S.cardTxns,from,end)}}
+function bizStats(){const b=S.biz||{};const from=bizTs(b.openedAt);if(from<=0)return null;const end=(!b.open&&bizTs(b.closedAt)>0)?bizTs(b.closedAt):9007199254740991;const L=bizLists(from,end);return{from:from,end:end,g:statsGrocery(bizToday(),bizToday(),L),m:statsMfs(bizToday(),bizToday(),L),r:statsRech(bizToday(),bizToday(),L),c:statsCards(bizToday(),bizToday(),L)}}
 function bizTime(iso){try{const d=new Date(iso);const H=d.getHours();const m=bn(d.getMinutes()<10?'0'+d.getMinutes():d.getMinutes());const h=H%12||12;return bn(h)+':'+m+' '+(H<12?'AM':'PM')}catch(e){return ''}}
 function daysAgoISO(n){const d=new Date();d.setDate(d.getDate()-n);return todayISO(d)}
 function fmtDate(ds){if(!ds)return '';const p=String(ds).split('-');return bn(+p[2])+' '+(MONTHS[+p[1]-1]||'')+' '+bn(+p[0]).replace(/[,\u066C]/g,'')}
@@ -218,32 +224,32 @@ const conf=p.buyPrice>0||p.sellPrice>0;
 if(conf&&p.stockQty<=p.lowQty)low++});return{buy:t2(v),sell:t2(sv),low:low}}
 
 /* ================= রিপোর্টের হিসাব ================= */
-function statsGrocery(from,to){let tot=0,cost=0,prof=0,cnt=0;
-  S.sales.forEach(s=>{if(s.date>=from&&s.date<=to){tot+=s.total;cost+=s.cost;prof+=s.profit;cnt++}});
-  const exp=S.expenses.filter(e=>e.cat==='grocery'&&e.date>=from&&e.date<=to).reduce((a,e)=>a+e.amount,0);
+function statsGrocery(from,to,L){let tot=0,cost=0,prof=0,cnt=0;
+  (L&&L.sales?L.sales:S.sales.filter(s=>s.date>=from&&s.date<=to)).forEach(s=>{tot+=s.total;cost+=s.cost;prof+=s.profit;cnt++});
+  const exp=(L&&L.expenses?L.expenses.filter(e=>e.cat==='grocery'):S.expenses.filter(e=>e.cat==='grocery'&&e.date>=from&&e.date<=to)).reduce((a,e)=>a+e.amount,0);
   return{tot:t2(tot),cost:t2(cost),prof:t2(prof),cnt:cnt,exp:t2(exp),net:t2(prof-exp)}}
-function statsMfs(from,to){const per={};let comm=0,fee=0,vol=0,cnt=0;
-  S.walletTxns.forEach(t=>{if(t.date<from||t.date>to)return;
+function statsMfs(from,to,L){const per={};let comm=0,fee=0,vol=0,cnt=0;
+  (L&&L.walletTxns?L.walletTxns:S.walletTxns.filter(t=>t.date>=from&&t.date<=to)).forEach(t=>{
     const w=S.wallets.find(x=>x.key===t.wkey);const nm=w?w.name:t.wkey;
     if(!per[t.wkey])per[t.wkey]={name:nm,cnt:0,vol:0,comm:0,fee:0};
     const p=per[t.wkey];
     if(t.type!=='adjust'){p.cnt++;p.vol+=t.amount;vol+=t.amount;cnt++}
     p.comm+=t.comm||0;p.fee+=t.fee||0;comm+=t.comm||0;fee+=t.fee||0});
   Object.keys(per).forEach(k=>{const p=per[k];p.vol=t2(p.vol);p.comm=t2(p.comm);p.fee=t2(p.fee);p.net=t2(p.comm-p.fee)});
-  const exp=S.expenses.filter(e=>e.cat==='mfs'&&e.date>=from&&e.date<=to).reduce((a,e)=>a+e.amount,0);
+  const exp=(L&&L.expenses?L.expenses.filter(e=>e.cat==='mfs'):S.expenses.filter(e=>e.cat==='mfs'&&e.date>=from&&e.date<=to)).reduce((a,e)=>a+e.amount,0);
   return{per:per,comm:t2(comm),fee:t2(fee),vol:t2(vol),cnt:cnt,exp:t2(exp),net:t2(comm-fee-exp)}}
-function statsRech(from,to){const per={};let comm=0,vol=0,cnt=0;
-  S.rechTxns.forEach(t=>{if(t.date<from||t.date>to)return;
+function statsRech(from,to,L){const per={};let comm=0,vol=0,cnt=0;
+  (L&&L.rechTxns?L.rechTxns:S.rechTxns.filter(t=>t.date>=from&&t.date<=to)).forEach(t=>{
     const o=S.operators.find(x=>x.key===t.op);const nm=o?o.name:t.op;
     if(!per[t.op])per[t.op]={name:nm,cnt:0,vol:0,comm:0};
     const p=per[t.op];
     if(t.type==='rech'){p.cnt++;p.vol+=t.amount;vol+=t.amount;cnt++}
     p.comm+=t.comm||0;comm+=t.comm||0});
   Object.keys(per).forEach(k=>{const p=per[k];p.vol=t2(p.vol);p.comm=t2(p.comm)});
-  const exp=S.expenses.filter(e=>e.cat==='rech'&&e.date>=from&&e.date<=to).reduce((a,e)=>a+e.amount,0);
+  const exp=(L&&L.expenses?L.expenses.filter(e=>e.cat==='rech'):S.expenses.filter(e=>e.cat==='rech'&&e.date>=from&&e.date<=to)).reduce((a,e)=>a+e.amount,0);
   return{per:per,comm:t2(comm),vol:t2(vol),cnt:cnt,exp:t2(exp),net:t2(comm-exp)}}
-function statsCards(from,to){let sale=0,qty=0,prof=0,cnt=0,buy=0;const per={};
-S.cardTxns.forEach(t=>{if(t.date<from||t.date>to)return;
+function statsCards(from,to,L){let sale=0,qty=0,prof=0,cnt=0,buy=0;const per={};
+(L&&L.cardTxns?L.cardTxns:S.cardTxns.filter(t=>t.date>=from&&t.date<=to)).forEach(t=>{
 if(t.type==='buy'){buy+=t.total||0;return}
 qty+=t.qty;sale+=t.total||0;prof+=t.profit||0;cnt++;
 const o=S.operators.find(x=>x.key===t.op);const nm=o?o.name:t.op;
@@ -251,8 +257,6 @@ if(!per[t.op])per[t.op]={name:nm,qty:0,sale:0,prof:0};
 per[t.op].qty+=t.qty;per[t.op].sale+=t.total||0;per[t.op].prof+=t.profit||0});
 Object.keys(per).forEach(k=>{per[k].qty=t2(per[k].qty);per[k].sale=t2(per[k].sale);per[k].prof=t2(per[k].prof)});
 return{per:per,sale:t2(sale),qty:t2(qty),prof:t2(prof),cnt:cnt,buy:t2(buy),net:t2(prof)}}
-
-/* ================= তারিখের রেঞ্জ ================= */
 function setRange(p){const d=new Date();let from=todayISO(),to=todayISO();
   if(p==='yesterday'){from=to=daysAgoISO(1)}
   else if(p==='week'){const dow=(d.getDay()+1)%7;from=daysAgoISO(dow)}
@@ -292,28 +296,35 @@ function shopCard(){const b=S.biz||{};
 if(b.open){return '<div class="card" style="border:1.5px solid #bfe3c6;background:#f0faf2"><div class="ch">🏪 দোকান চালু আছে <span class="badge b-grn">খোলা: '+bizTime(b.openedAt)+'</span></div>'
 +'<div class="lrow" style="border:none;padding:0 0 9px"><div class="lt"><b>ব্যবসা দিন চলছে: '+fmtDate(b.date)+'</b><small>এখন থেকে দোকান বন্ধ করা পর্যন্ত সব হিসাব এই দিনের ভেতরেই জমা হবে — মাঝরাত পার হয়ে গেলেও ✓</small></div></div>'
 +'<button class="btn danger" onclick="shopCloseBtn()">🔒 দোকান বন্ধ করুন — দিনের হিসাব দেখুন</button></div>'}
-if(b.lastDate){const g=statsGrocery(b.lastDate,b.lastDate),m=statsMfs(b.lastDate,b.lastDate),r=statsRech(b.lastDate,b.lastDate);
+if(b.lastDate){let g=statsGrocery(b.lastDate,b.lastDate),m=statsMfs(b.lastDate,b.lastDate),r=statsRech(b.lastDate,b.lastDate);const BS=bizStats();if(BS){g=BS.g;m=BS.m;r=BS.r}
 return '<div class="card" style="border:1.5px solid var(--line)"><div class="ch">🏪 দোকান বন্ধ আছে <small class="mut" style="font-weight:400">শেষ ব্যবসা দিন: '+fmtDate(b.lastDate)+'</small></div>'
 +'<div class="b3"><div><small>বিক্রয় (মুদি)</small><b>'+fmt(g.tot)+'</b></div><div><small>ব্যাংকিং নিট</small><b>'+fmt(m.net)+'</b></div><div><small>রিচার্জ নিট</small><b>'+fmt(r.net)+'</b></div></div>'
 +'<button class="btn" style="margin-top:10px" onclick="shopOpenBtn()">🔓 দোকান চালু করুন (নতুন ব্যবসা দিন)</button></div>'}
 return '<div class="card"><div class="ch">🏪 দোকান চালু/বন্ধ</div><small class="mut" style="display:block;margin-bottom:9px">দোকান খুললে "চালু" করুন — রাত ১২টা পার হয়ে বন্ধ করলেও পুরো দিনের হিসাব একসাথে থাকবে।</small><button class="btn" onclick="shopOpenBtn()">🔓 দোকান চালু করুন</button></div>'}
 function shopOpenBtn(){S.biz=S.biz||{};if(S.biz.open)return toast('দোকান আগেই চালু আছে ✓');
-S.biz.open=true;S.biz.date=todayISO();S.biz.openedAt=new Date().toISOString();save();renderView();toast('🏪 দোকান চালু — ব্যবসা দিন শুরু! শুভ বেচাকেনা হোক')}
+const nd=todayISO();const reopen=(S.biz.date===nd&&bizTs(S.biz.openedAt)>0);
+confirmBox('দোকান চালু করতে চান?'+(reopen?' (একই দিনে আবার চালু হচ্ছে — আগের হিসাবের সাথেই ধরা হবে)':' নতুন ব্যবসা দিনের হিসাব শুরু হবে — আগের দিনের হিসাব মুছবে না, সব রিপোর্টে থাকবে ✓'),()=>{
+if(!reopen){S.biz.date=nd;S.biz.openedAt=new Date().toISOString();S.biz.startCash=cashTotal()}
+S.biz.open=true;save();renderView();toast('🏪 দোকান চালু — ব্যবসা দিন শুরু! শুভ বেচাকেনা হোক')})}
 function shopCloseBtn(){const b=S.biz||{};if(!b.open)return toast('দোকান এখন বন্ধ আছে');
-b.open=false;b.closedAt=new Date().toISOString();b.lastDate=b.date;save();renderView();showDaySummary(b.date,b.openedAt,b.closedAt)}
-function showDaySummary(date,openedAt,closedAt){const g=statsGrocery(date,date),m=statsMfs(date,date),r=statsRech(date,date),cd=statsCards(date,date);
-const ce=t2(S.expenses.filter(e=>e.cat==='common'&&e.date===date).reduce((a,e)=>a+e.amount,0));
-const net=t2(g.net+m.net+r.net+cd.net-ce);
+confirmBox('দোকান বন্ধ করতে চান? এই মুহূর্ত পর্যন্ত যত হিসাব হয়েছে, সেগুলোই এই দিনের হিসাব হিসেবে থেমে থাকবে — পরেও দেখা যাবে, রিপোর্টেও থাকবে ✓',()=>{
+b.open=false;b.closedAt=new Date().toISOString();b.lastDate=b.date;save();renderView();setTimeout(function(){showDaySummary(b.date,b.openedAt,b.closedAt)},60)})}
+function showDaySummary(date,openedAt,closedAt){const from=bizTs(openedAt);const end=bizTs(closedAt)>0?bizTs(closedAt):9007199254740991;let g,m,r,cd,ce;
+if(from>0){const L=bizLists(from,end);g=statsGrocery(date,date,L);m=statsMfs(date,date,L);r=statsRech(date,date,L);cd=statsCards(date,date,L);ce=t2(L.expenses.filter(e=>e.cat==='common').reduce((a,e)=>a+e.amount,0))}
+else{g=statsGrocery(date,date);m=statsMfs(date,date);r=statsRech(date,date);cd=statsCards(date,date);ce=t2(S.expenses.filter(e=>e.cat==='common'&&e.date===date).reduce((a,e)=>a+e.amount,0))}
+const net=t2(g.net+m.net+r.net+cd.net-ce);const bb=S.biz||{};
+const cashRows=((typeof bb.startCash==='number')?'<div class="lrow"><div class="lt">💰 শুরুর নগদ (দোকান খোলার সময় হাতে)</div><b>'+fmt(bb.startCash)+'</b></div>':'')+'<div class="lrow"><div class="lt">💰 এখন হাতে নগদ</div><b>'+fmt(cashTotal())+'</b></div>';
 openModal('🏪 ব্যবসা দিনের হিসাব — '+fmtDate(date),
-'<small class="mut" style="display:block;margin-bottom:8px">খোলা '+bizTime(openedAt)+' → বন্ধ '+bizTime(closedAt)+' (রাত পার হলেও একই দিনের হিসাব ✓)</small>'
+'<small class="mut" style="display:block;margin-bottom:8px">খোলা '+bizTime(openedAt)+' → বন্ধ '+bizTime(closedAt)+' — শুধু দোকান চালু থাকা সময়ের লেনদেনই এখানে</small>'
 +'<div class="lrow"><div class="lt">🛒 মুদি বিক্রয় ('+bn(g.cnt)+' মামলা)</div><b>'+fmt(g.tot)+'</b></div>'
 +'<div class="lrow"><div class="lt">🛒 মুদি নিট লাভ</div><b class="'+(g.net>=0?'grn':'red')+'">'+fmt(g.net)+'</b></div>'
 +'<div class="lrow"><div class="lt">💸 মোবাইল ব্যাংকিং নিট ('+bn(m.cnt)+' লেনদেন)</div><b class="'+(m.net>=0?'grn':'red')+'">'+fmt(m.net)+'</b></div>'
 +'<div class="lrow"><div class="lt">📶 রিচার্জ নিট ('+bn(r.cnt)+' রিচার্জ)</div><b class="'+(r.net>=0?'grn':'red')+'">'+fmt(r.net)+'</b></div>'+'<div class="lrow"><div class="lt">🎫 কার্ড বিক্রয় ('+bn(cd.qty)+' টি)</div><b class="'+(cd.net>=0?'grn':'red')+'">'+fmt(cd.net)+'</b></div>'
 +(ce>0?'<div class="lrow"><div class="lt">🏠 সাধারণ খরচ</div><b class="red">−'+fmt(ce)+'</b></div>':'')
++cashRows
 +'<div class="lrow" style="border:none"><div class="lt"><b>⚖️ আজকের সর্বমোট লাভ</b></div><b class="'+(net>=0?'grn':'red')+'" style="font-size:17px">'+fmt(net)+'</b></div>',
 '<button class="btn" onclick="closeModal()">ঠিক আছে</button>')}
-function renderHome(){const TD=bizToday();const g=statsGrocery(TD,TD),m=statsMfs(TD,TD),r=statsRech(TD,TD),c=statsCards(TD,TD);const pd=totPaboDibo();const sv=stockValue();
+function renderHome(){const TD=bizToday();const pd=totPaboDibo();const sv=stockValue();
 el('h_shop').textContent=S.settings.shopName||'আমার হিসাব';
 el('view-home').innerHTML=
 (canStore?'':'<div class="alertcard">⚠️ <b>প্রিভিউ মোড:</b> এখানে ডেটা সেভ হবে না (ডেমো ডেটা দেখানো হচ্ছে)। ফাইলটি ডাউনলোড করে ফোনের Chrome-এ খুললে বা হোস্ট করলে সব ডেটা সেভ হবে।</div>')
@@ -330,11 +341,7 @@ el('view-home').innerHTML=
 +'<button class="qbtn" onclick="setGsub(\'stock\');go(\'grocery\')">📦<span>স্টক</span></button>'
 +'<button class="qbtn" onclick="cur.more=\'settings\';go(\'more\')">⚙️<span>সেটিংস</span></button>'
 +'</div>'
-+'<div class="card"><div class="ch">📈 আজকের হিসাব <button class="lnk" onclick="go(\'report\')">বিস্তারিত ›</button></div>'
-+'<div class="b3"><div><small>মুদি বিক্রয়</small><b>'+fmt(g.tot)+'</b><small class="grn">লাভ '+fmt(g.net)+'</small></div>'
-+'<div><small>ব্যাংকিং (নিট)</small><b>'+fmt(m.net)+'</b><small class="mut">'+bn(m.cnt)+' লেনদেন</small></div>'
-+'<div><small>রিচার্জ+কার্ড (নিট)</small><b>'+fmt(r.net+c.net)+'</b><small class="mut">রিচার্জ '+fmt(r.net)+' • কার্ড '+fmt(c.net)+'</small></div></div>'
-+'<div style="text-align:center;margin-top:8px;font-weight:800">আজকের মোট লাভ: <span class="grn">'+fmt(g.net+m.net+r.net+c.net)+'</span></div></div>'
++todayCard()
 +'<div class="card"><div class="ch">👛 সব ব্যালান্স (স্টক)</div>'
 +'<small class="mut">💸 মোবাইল ব্যাংকিং ওয়ালেট</small><div class="chips" style="margin:5px 0 10px">'+S.wallets.map(w=>'<div class="chip"><small>'+esc(w.name)+'</small><b>'+fmt(wBal(w.key))+'</b></div>').join('')+'</div>'
 +'<small class="mut">📶 রিচার্জ অপারেটর</small><div class="chips" style="margin:5px 0 10px">'+S.operators.map(o=>'<div class="chip"><small>'+esc(o.name)+'</small><b>'+fmt(opBal(o.key))+'</b></div>').join('')+'</div>'
@@ -342,6 +349,20 @@ el('view-home').innerHTML=
 +'<div class="card"><div class="ch">🤝 পাবো-দেবো <button class="lnk" onclick="cur.more=\'menu\';go(\'ledger\')">খাতা দেখুন ›</button></div>'
 +'<div class="b3"><div><small>🔵 পাবো (পাব বাকি)</small><b class="grn">'+fmt(pd.po)+'</b></div><div><small>🔴 দেবো (দেব বাকি)</small><b class="red">'+fmt(pd.db)+'</b></div><div><small>⚠️ কম স্টক</small><b class="red">'+bn(sv.low)+' টি পণ্য</b></div></div></div>'
 +(sv.low>0?lowStockCard():'')}
+
+function todayCard(){const BS=bizStats();const b=S.biz||{};
+if(!BS)return '<div class="card"><div class="ch">📈 আজকের হিসাব</div><div class="empty">দোকান চালু করার পর থেকে বন্ধ করা পর্যন্ত যত লেনদেন হবে, শুধু সেগুলোই এখানে দেখাবে। উপরে "🔓 দোকান চালু করুন" বাটনে চেপে ব্যবসা দিন শুরু করুন।</div></div>';
+const g=BS.g,m=BS.m,r=BS.r,c=BS.c;const open=!!b.open;const same=(b.date===todayISO());
+const head=open?'📈 আজকের হিসাব':(same?'📈 আজকের হিসাব':'📈 শেষ ব্যবসা দিনের হিসাব ('+fmtDate(b.date)+')');
+const badge=open?'<span class="badge b-grn">চালু — খোলা '+bizTime(b.openedAt)+'</span>':'<span class="badge b-red">বন্ধ '+bizTime(b.closedAt)+' এ</span>';
+const cashRow=(typeof b.startCash==='number')?'<div class="lrow" style="border:none;padding:7px 0 0"><div class="lt"><small>💰 শুরুর নগদ (দোকান খোলার সময় হাতে)</small><b>'+fmt(b.startCash)+'</b></div><div class="rt"><small class="mut">এখন হাতে নগদ</small><b>'+fmt(cashTotal())+'</b></div></div>':'';
+const note=(!open&&!same)?'<small class="mut" style="display:block;margin-top:6px">আজ এখনো দোকান চালু করেননি — চালু করলেই নতুন দিনের হিসাব শূন্য থেকে শুরু হবে (আগের দিনের হিসাব রিপোর্টে অক্ষত থাকবে)।</small>':'';
+return '<div class="card"><div class="ch">'+head+' '+badge+' <button class="lnk" onclick="go(\'report\')">বিস্তারিত ›</button></div>'
++'<div class="b3"><div><small>মুদি বিক্রয়</small><b>'+fmt(g.tot)+'</b><small class="grn">লাভ '+fmt(g.net)+'</small></div>'
++'<div><small>ব্যাংকিং (নিট)</small><b>'+fmt(m.net)+'</b><small class="mut">'+bn(m.cnt)+' লেনদেন</small></div>'
++'<div><small>রিচার্জ+কার্ড (নিট)</small><b>'+fmt(r.net+c.net)+'</b><small class="mut">রিচার্জ '+fmt(r.net)+' • কার্ড '+fmt(c.net)+'</small></div></div>'
++cashRow+note
++'<div style="text-align:center;margin-top:8px;font-weight:800">'+(open||same?'আজকের মোট লাভ:':'ঐ দিনের মোট লাভ:')+' <span class="grn">'+fmt(g.net+m.net+r.net+c.net)+'</span></div></div>'}
 function lowStockCard(){const lows=S.products.filter(p=>p.stockQty<=p.lowQty).slice(0,8);
 return '<div class="alertcard">⚠️ <b>কম স্টক অ্যালার্ট:</b> '+lows.map(p=>esc(p.name)+' ('+bn(p.stockQty)+' '+esc(p.unit)+')').join(', ')+' — শিগগিরি ক্রয় করুন</div>'}
 
