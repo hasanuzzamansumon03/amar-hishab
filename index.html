@@ -174,6 +174,8 @@ function freshState(){return{
     {key:'tt',name:'টেলিটক',opening:0,rate:35}
   ],
   rechTxns:[],
+  cards:[],
+  cardTxns:[],
   orders:[],
   biz:{open:false,date:'',openedAt:'',closedAt:'',lastDate:''}
 }}
@@ -206,6 +208,7 @@ function cashTotal(){let c=S.settings.openingCash||0;
   S.partyTxns.forEach(t=>c+=t.cash||0);
   S.walletTxns.forEach(t=>c+=t.cD||0);
   S.rechTxns.forEach(t=>c+=t.cD||0);
+  S.cardTxns.forEach(t=>c+=t.cD||0);
   return t2(c)}
 function partyBal(id){let b=0;S.partyTxns.forEach(t=>{if(t.partyId===id)b+=(t.kind==='due'?t.amount:-(t.amount||0))});return t2(b)}
 function partyName(id){const p=S.parties.find(x=>x.id===id);return p?p.name:''}
@@ -239,6 +242,15 @@ function statsRech(from,to){const per={};let comm=0,vol=0,cnt=0;
   Object.keys(per).forEach(k=>{const p=per[k];p.vol=t2(p.vol);p.comm=t2(p.comm)});
   const exp=S.expenses.filter(e=>e.cat==='rech'&&e.date>=from&&e.date<=to).reduce((a,e)=>a+e.amount,0);
   return{per:per,comm:t2(comm),vol:t2(vol),cnt:cnt,exp:t2(exp),net:t2(comm-exp)}}
+function statsCards(from,to){let sale=0,qty=0,prof=0,cnt=0,buy=0;const per={};
+S.cardTxns.forEach(t=>{if(t.date<from||t.date>to)return;
+if(t.type==='buy'){buy+=t.total||0;return}
+qty+=t.qty;sale+=t.total||0;prof+=t.profit||0;cnt++;
+const o=S.operators.find(x=>x.key===t.op);const nm=o?o.name:t.op;
+if(!per[t.op])per[t.op]={name:nm,qty:0,sale:0,prof:0};
+per[t.op].qty+=t.qty;per[t.op].sale+=t.total||0;per[t.op].prof+=t.profit||0});
+Object.keys(per).forEach(k=>{per[k].qty=t2(per[k].qty);per[k].sale=t2(per[k].sale);per[k].prof=t2(per[k].prof)});
+return{per:per,sale:t2(sale),qty:t2(qty),prof:t2(prof),cnt:cnt,buy:t2(buy),net:t2(prof)}}
 
 /* ================= তারিখের রেঞ্জ ================= */
 function setRange(p){const d=new Date();let from=todayISO(),to=todayISO();
@@ -289,19 +301,19 @@ function shopOpenBtn(){S.biz=S.biz||{};if(S.biz.open)return toast('দোকা�
 S.biz.open=true;S.biz.date=todayISO();S.biz.openedAt=new Date().toISOString();save();renderView();toast('🏪 দোকান চালু — ব্যবসা দিন শুরু! শুভ বেচাকেনা হোক')}
 function shopCloseBtn(){const b=S.biz||{};if(!b.open)return toast('দোকান এখন বন্ধ আছে');
 b.open=false;b.closedAt=new Date().toISOString();b.lastDate=b.date;save();renderView();showDaySummary(b.date,b.openedAt,b.closedAt)}
-function showDaySummary(date,openedAt,closedAt){const g=statsGrocery(date,date),m=statsMfs(date,date),r=statsRech(date,date);
+function showDaySummary(date,openedAt,closedAt){const g=statsGrocery(date,date),m=statsMfs(date,date),r=statsRech(date,date),cd=statsCards(date,date);
 const ce=t2(S.expenses.filter(e=>e.cat==='common'&&e.date===date).reduce((a,e)=>a+e.amount,0));
-const net=t2(g.net+m.net+r.net-ce);
+const net=t2(g.net+m.net+r.net+cd.net-ce);
 openModal('🏪 ব্যবসা দিনের হিসাব — '+fmtDate(date),
 '<small class="mut" style="display:block;margin-bottom:8px">খোলা '+bizTime(openedAt)+' → বন্ধ '+bizTime(closedAt)+' (রাত পার হলেও একই দিনের হিসাব ✓)</small>'
 +'<div class="lrow"><div class="lt">🛒 মুদি বিক্রয় ('+bn(g.cnt)+' মামলা)</div><b>'+fmt(g.tot)+'</b></div>'
 +'<div class="lrow"><div class="lt">🛒 মুদি নিট লাভ</div><b class="'+(g.net>=0?'grn':'red')+'">'+fmt(g.net)+'</b></div>'
 +'<div class="lrow"><div class="lt">💸 মোবাইল ব্যাংকিং নিট ('+bn(m.cnt)+' লেনদেন)</div><b class="'+(m.net>=0?'grn':'red')+'">'+fmt(m.net)+'</b></div>'
-+'<div class="lrow"><div class="lt">📶 রিচার্জ নিট ('+bn(r.cnt)+' রিচার্জ)</div><b class="'+(r.net>=0?'grn':'red')+'">'+fmt(r.net)+'</b></div>'
++'<div class="lrow"><div class="lt">📶 রিচার্জ নিট ('+bn(r.cnt)+' রিচার্জ)</div><b class="'+(r.net>=0?'grn':'red')+'">'+fmt(r.net)+'</b></div>'+'<div class="lrow"><div class="lt">🎫 কার্ড বিক্রয় ('+bn(cd.qty)+' টি)</div><b class="'+(cd.net>=0?'grn':'red')+'">'+fmt(cd.net)+'</b></div>'
 +(ce>0?'<div class="lrow"><div class="lt">🏠 সাধারণ খরচ</div><b class="red">−'+fmt(ce)+'</b></div>':'')
 +'<div class="lrow" style="border:none"><div class="lt"><b>⚖️ আজকের সর্বমোট লাভ</b></div><b class="'+(net>=0?'grn':'red')+'" style="font-size:17px">'+fmt(net)+'</b></div>',
 '<button class="btn" onclick="closeModal()">ঠিক আছে</button>')}
-function renderHome(){const TD=bizToday();const g=statsGrocery(TD,TD),m=statsMfs(TD,TD),r=statsRech(TD,TD);const pd=totPaboDibo();const sv=stockValue();
+function renderHome(){const TD=bizToday();const g=statsGrocery(TD,TD),m=statsMfs(TD,TD),r=statsRech(TD,TD),c=statsCards(TD,TD);const pd=totPaboDibo();const sv=stockValue();
 el('h_shop').textContent=S.settings.shopName||'আমার হিসাব';
 el('view-home').innerHTML=
 (canStore?'':'<div class="alertcard">⚠️ <b>প্রিভিউ মোড:</b> এখানে ডেটা সেভ হবে না (ডেমো ডেটা দেখানো হচ্ছে)। ফাইলটি ডাউনলোড করে ফোনের Chrome-এ খুললে বা হোস্ট করলে সব ডেটা সেভ হবে।</div>')
@@ -321,8 +333,8 @@ el('view-home').innerHTML=
 +'<div class="card"><div class="ch">📈 আজকের হিসাব <button class="lnk" onclick="go(\'report\')">বিস্তারিত ›</button></div>'
 +'<div class="b3"><div><small>মুদি বিক্রয়</small><b>'+fmt(g.tot)+'</b><small class="grn">লাভ '+fmt(g.net)+'</small></div>'
 +'<div><small>ব্যাংকিং (নিট)</small><b>'+fmt(m.net)+'</b><small class="mut">'+bn(m.cnt)+' লেনদেন</small></div>'
-+'<div><small>রিচার্জ (নিট)</small><b>'+fmt(r.net)+'</b><small class="mut">'+bn(r.cnt)+' রিচার্জ</small></div></div>'
-+'<div style="text-align:center;margin-top:8px;font-weight:800">আজকের মোট লাভ: <span class="grn">'+fmt(g.net+m.net+r.net)+'</span></div></div>'
++'<div><small>রিচার্জ+কার্ড (নিট)</small><b>'+fmt(r.net+c.net)+'</b><small class="mut">রিচার্জ '+fmt(r.net)+' • কার্ড '+fmt(c.net)+'</small></div></div>'
++'<div style="text-align:center;margin-top:8px;font-weight:800">আজকের মোট লাভ: <span class="grn">'+fmt(g.net+m.net+r.net+c.net)+'</span></div></div>'
 +'<div class="card"><div class="ch">👛 সব ব্যালান্স (স্টক)</div>'
 +'<small class="mut">💸 মোবাইল ব্যাংকিং ওয়ালেট</small><div class="chips" style="margin:5px 0 10px">'+S.wallets.map(w=>'<div class="chip"><small>'+esc(w.name)+'</small><b>'+fmt(wBal(w.key))+'</b></div>').join('')+'</div>'
 +'<small class="mut">📶 রিচার্জ অপারেটর</small><div class="chips" style="margin:5px 0 10px">'+S.operators.map(o=>'<div class="chip"><small>'+esc(o.name)+'</small><b>'+fmt(opBal(o.key))+'</b></div>').join('')+'</div>'
@@ -553,6 +565,7 @@ return '<div class="lrow"><div class="lt"><b>'+esc(w?w.name:t.wkey)+' — '+(ty?
 +'<small>'+fmtDate(t.date)+(t.cust?' • '+esc(t.cust):'')+(t.note?' • '+esc(t.note):'')+'</small></div>'
 +'<div class="rt"><b>'+fmt(t.amount)+'</b>'+((t.comm||0)>0?'<small class="grn">কমিশন +'+fmt(t.comm)+'</small>':'')+((t.fee||0)>0?'<small class="red">ফি −'+fmt(t.fee)+'</small>':'')+'</div>'
 +'<button class="del" onclick="delWtxn(\''+t.id+'\')">🗑</button></div>'}).join(''):'<div class="empty">কোনো লেনদেন নেই</div>')+'</div>'}
+else if((cur.rsub||'flex')==='card'){renderCardSection(g)}
 else{
 const txs=S.rechTxns.slice().reverse().slice(0,40);
 g.innerHTML=''
@@ -649,6 +662,91 @@ function saveOpAdjust(key){const real=+el('oadj_real').value||0;const diff=t2(re
 if(!diff)return toast('ব্যালান্স আগেই ঠিক আছে ✓');
 S.rechTxns.push({id:uid(),ts:Date.now(),date:bizToday(),op:key,type:'adjust',amount:diff,comm:0,phone:'',oD:diff,cD:0});
 save();closeModal();toast('সমন্বয়: '+fmt(diff));renderView()}
+
+/* ---------- 🎫 রিচার্জ কার্ড ব্যবসা ---------- */
+const CARD_KINDS={taka:'টাকা কার্ড',mb:'এমবি কার্ড',min:'মিনিট কার্ড'};
+function setRsub(f){cur.rsub=f;renderMobile()}
+function renderCardSection(g){const TD=bizToday();
+const todayTx=S.cardTxns.filter(t=>t.date===TD&&t.type==='sale');
+const tq=t2(todayTx.reduce((a,t)=>a+t.qty,0)),ts=t2(todayTx.reduce((a,t)=>a+t.total,0)),tp=t2(todayTx.reduce((a,t)=>a+t.profit,0));
+const stockBuy=t2(S.cards.reduce((a,c)=>a+c.stockQty*c.buyPrice,0));
+g.innerHTML='<div class="card"><div class="ch">🎫 রিচার্জ কার্ড ব্যবসা</div>'
++'<div class="b3"><div><small>আজকের কার্ড বিক্রয়</small><b>'+bn(tq)+' টি</b></div><div><small>বিক্রয় টাকা</small><b>'+fmt(ts)+'</b></div><div><small>আজকের লাভ</small><b class="grn">'+fmt(tp)+'</b></div></div>'
++'<small class="mut" style="display:block;margin-top:6px">কার্ড স্টকের মূল্য (ক্রয় মূল্যে): '+fmt(stockBuy)+'</small></div>'
++'<div class="row2" style="margin-bottom:11px"><button class="btn" onclick="openCardSaleModal()">🛒 কার্ড বিক্রয়</button><button class="btn ghost" onclick="openCardModal()">＋ নতুন কার্ড সেটআপ</button></div>'
++(S.cards.length?S.operators.map(o=>{const cs=S.cards.filter(c=>c.op===o.key);if(!cs.length)return '';
+return '<div class="card"><div class="ch">'+esc(o.name)+'</div>'+cs.map(c=>{const k=CARD_KINDS[c.kind]||c.kind;
+return '<div class="lrow"><div class="lt"><b>'+esc(c.name||k)+'</b><small><span class="badge b-teal">'+k+'</span> স্টক '+bn(c.stockQty)+' • ক্রয় '+fmt(c.buyPrice)+' • বিক্রয় '+fmt(c.sellPrice)+(c.stockQty<=c.lowQty?' <span class="badge b-red">কম স্টক</span>':'')+'</small></div>'
++'<div class="rt"><b class="grn">লাভ '+fmt(t2(c.sellPrice-c.buyPrice))+'</b><small class="mut">/পিস</small></div>'
++'<button class="btn sm" onclick="openCardSaleModal(\''+c.id+'\')">বিক্রি</button>'
++'<button class="btn sm ghost" onclick="openCardBuyModal(\''+c.id+'\')">ক্রয়</button>'
++'<button class="del" onclick="openCardModal(\''+c.id+'\')">✏️</button></div>'}).join('')+'</div>'}).join('')
+:'<div class="card"><div class="empty">কোনো কার্ড সেটআপ নেই — "＋ নতুন কার্ড সেটআপ" দিয়ে কার্ডের ধরন (টাকা/এমবি/মিনিট), ক্রয় ও বিক্রয় মূল্য দিয়ে যোগ করুন</div></div>')
++cardHistoryHTML()}
+function cardHistoryHTML(){const txs=S.cardTxns.slice().reverse().slice(0,12);
+if(!txs.length)return '';
+return '<div class="card" style="padding:4px 14px"><div class="ch" style="padding-top:10px">সাম্প্রতিক কার্ড লেনদেন</div>'
++txs.map(t=>{const o=S.operators.find(x=>x.key===t.op);
+return '<div class="lrow"><div class="lt"><b>'+esc(t.name)+'</b><small>'+fmtDate(t.date)+' • '+esc(o?o.name:'')+' • '+bn(t.qty)+' টি'+(t.type==='buy'?' • <span class="badge b-org">কার্ড ক্রয়</span>':'')+'</small></div>'
++'<div class="rt"><b class="'+(t.type==='buy'?'red':'grn')+'">'+(t.type==='buy'?'−'+fmt(t.total):'+'+fmt(t.total))+'</b>'+(t.type==='sale'?'<small class="grn">লাভ '+fmt(t.profit)+'</small>':'')+'</div>'
++'<button class="del" onclick="delCardTxn(\''+t.id+'\')">🗑</button></div>'}).join('')+'</div>'}
+function openCardModal(id){const c=id?S.cards.find(x=>x.id===id):null;
+openModal(c?'✏️ কার্ড এডিট':'🎫 নতুন রিচার্জ কার্ড সেটআপ',
+'<label class="lbl">অপারেটর *</label><select class="inp" id="cd_op">'+S.operators.map(o=>'<option value="'+o.key+'"'+(c&&c.op===o.key?' selected':'')+'>'+esc(o.name)+'</option>').join('')+'</select>'
++'<label class="lbl">কার্ডের ধরন *</label><select class="inp" id="cd_kind">'+Object.keys(CARD_KINDS).map(k=>'<option value="'+k+'"'+(c&&c.kind===k?' selected':'')+'>'+CARD_KINDS[k]+'</option>').join('')+'</select>'
++'<label class="lbl">কার্ডের নাম</label><input class="inp" id="cd_name" value="'+(c?esc(c.name||''):'')+'" placeholder="যেমন: ১৯ টাকার এমবি কার্ড (খালি রাখলে অটো নাম)">'
++'<div class="row3"><div><label class="lbl">ক্রয় মূল্য ৳ *</label><input class="inp" id="cd_buy" type="number" inputmode="decimal" value="'+(c?c.buyPrice:'')+'"></div>'
++'<div><label class="lbl">বিক্রয় মূল্য ৳ *</label><input class="inp" id="cd_sell" type="number" inputmode="decimal" value="'+(c?c.sellPrice:'')+'"></div>'
++'<div><label class="lbl">'+(c?'স্টক ঠিক করুন':'প্রারম্ভিক স্টক')+'</label><input class="inp" id="cd_qty" type="number" inputmode="decimal" value="'+(c?c.stockQty:0)+'"></div></div>'
++'<label class="lbl">কম স্টক সীমা</label><input class="inp" id="cd_low" type="number" inputmode="decimal" value="'+(c?c.lowQty:5)+'">'
++(c?'<button class="btn danger" style="margin-top:12px" onclick="delCard(\''+c.id+'\')">🗑 কার্ডটি মুছুন</button>':''),
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveCard(\''+(id||'')+'\')">সংরক্ষণ করুন</button>')}
+function saveCard(id){const sell=+el('cd_sell').value||0;const buy=+el('cd_buy').value||0;
+if(sell<=0)return toast('বিক্রয় মূল্য দিন');
+const op=el('cd_op').value;const kind=el('cd_kind').value;
+let name=el('cd_name').value.trim();
+if(!name){const o=S.operators.find(x=>x.key===op);name=(o?o.name+' ':'')+CARD_KINDS[kind]}
+const o={op:op,kind:kind,name:name,buyPrice:t2(buy),sellPrice:t2(sell),stockQty:+el('cd_qty').value||0,lowQty:+el('cd_low').value||0};
+if(id){Object.assign(S.cards.find(x=>x.id===id),o)}else{S.cards.push(Object.assign({id:uid()},o))}
+save();closeModal();renderView();toast('কার্ড সংরক্ষিত ✅')}
+function delCard(id){if(S.cardTxns.some(t=>t.cardId===id))return toast('এই কার্ডের লেনদেন আছে — হিসাব রক্ষার জন্য মুছা যাবে না');
+confirmBox('কার্ডটি মুছে ফেলবেন?',()=>{S.cards=S.cards.filter(c=>c.id!==id);save();closeModal();renderView();toast('মুছে ফেলা হয়েছে')})}
+function openCardSaleModal(cardId){if(!S.cards.length)return toast('আগে কার্ড সেটআপ করুন');
+openModal('🛒 রিচার্জ কার্ড বিক্রয়',
+'<label class="lbl">কোন কার্ড? *</label><select class="inp" id="cs_card" onchange="cardSaleCalc()">'+S.cards.map(c=>{const o=S.operators.find(x=>x.key===c.op);return '<option value="'+c.id+'"'+(c.id===cardId?' selected':'')+'>'+esc(c.name)+' — '+esc(o?o.name:'')+' (স্টক '+bn(c.stockQty)+')</option>'}).join('')+'</select>'
++'<div class="row2"><div><label class="lbl">কয়টি বিক্রি হলো? *</label><input class="inp" id="cs_qty" type="number" inputmode="decimal" value="1" oninput="cardSaleCalc()"></div>'
++'<div><label class="lbl">তারিখ</label><input class="inp" id="cs_date" type="date" value="'+bizToday()+'"></div></div>'
++'<div id="cs_calc" style="margin-top:8px"></div>',
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveCardSale()">✅ বিক্রয় সম্পন্ন</button>');
+cardSaleCalc()}
+function cardSaleCalc(){const c=S.cards.find(x=>x.id===el('cs_card').value);if(!c)return;
+const q=+el('cs_qty').value||0;const tot=t2(c.sellPrice*q);const prof=t2((c.sellPrice-c.buyPrice)*q);
+el('cs_calc').innerHTML='<div class="card" style="background:#e9f5f2;margin-bottom:0"><div class="lrow" style="border:none;padding:0"><div class="lt"><b>মোট: '+fmt(tot)+'</b><small>লাভ: <b class="grn">'+fmt(prof)+'</b> • বিক্রির পর স্টক থাকবে: '+bn(t2(c.stockQty-q))+' টি</small></div></div></div>'}
+function saveCardSale(){const c=S.cards.find(x=>x.id===el('cs_card').value);if(!c)return toast('কার্ড বাছুন');
+const q=+el('cs_qty').value||0;if(q<=0)return toast('সংখ্যা লিখুন');
+if(q>c.stockQty)return toast('স্টকে মাত্র '+bn(c.stockQty)+' টি আছে!');
+const tot=t2(c.sellPrice*q);const prof=t2((c.sellPrice-c.buyPrice)*q);
+S.cardTxns.push({id:uid(),ts:Date.now(),date:el('cs_date').value||bizToday(),type:'sale',cardId:c.id,op:c.op,kind:c.kind,name:c.name,qty:t2(q),buy:c.buyPrice,sell:c.sellPrice,total:tot,profit:prof,cD:tot});
+c.stockQty=t2(c.stockQty-q);save();closeModal();renderView();toast('কার্ড বিক্রয় ✅ মোট '+fmt(tot)+' • লাভ '+fmt(prof))}
+function openCardBuyModal(cardId){if(!S.cards.length)return toast('আগে কার্ড সেটআপ করুন');
+const c=S.cards.find(x=>x.id===cardId)||S.cards[0];
+openModal('🚚 কার্ড ক্রয় (স্টকে আনুন)',
+'<label class="lbl">কোন কার্ড? *</label><select class="inp" id="cb_card">'+S.cards.map(x=>{const o=S.operators.find(z=>z.key===x.op);return '<option value="'+x.id+'"'+(x.id===c.id?' selected':'')+'>'+esc(x.name)+' (স্টক '+bn(x.stockQty)+')</option>'}).join('')+'</select>'
++'<div class="row2"><div><label class="lbl">কয়টি এলো? *</label><input class="inp" id="cb_qty" type="number" inputmode="decimal"></div>'
++'<div><label class="lbl">একক ক্রয় মূল্য ৳</label><input class="inp" id="cb_rate" type="number" inputmode="decimal" value="'+c.buyPrice+'"></div></div>'
++'<label class="lbl">তারিখ</label><input class="inp" id="cb_date" type="date" value="'+bizToday()+'">',
+'<button class="btn ghost" onclick="closeModal()">বাতিল</button><button class="btn" onclick="saveCardBuy()">সংরক্ষণ করুন</button>')}
+function saveCardBuy(){const c=S.cards.find(x=>x.id===el('cb_card').value);if(!c)return toast('কার্ড বাছুন');
+const q=+el('cb_qty').value||0;if(q<=0)return toast('সংখ্যা লিখুন');
+const rate=+el('cb_rate').value||0;const tot=t2(rate*q);
+S.cardTxns.push({id:uid(),ts:Date.now(),date:el('cb_date').value||bizToday(),type:'buy',cardId:c.id,op:c.op,kind:c.kind,name:c.name,qty:t2(q),unitCost:t2(rate),total:tot,profit:0,cD:-tot,prevBuy:c.buyPrice});
+c.stockQty=t2(c.stockQty+q);if(rate>0)c.buyPrice=t2(rate);
+save();closeModal();renderView();toast('কার্ড ক্রয় ✅ স্টক: '+bn(c.stockQty)+' টি')}
+function delCardTxn(id){confirmBox('এই কার্ড লেনদেনটি মুছে ফেলবেন? স্টক স্বয়ংক্রিয়ভাবে ঠিক হয়ে যাবে।',()=>{
+const t=S.cardTxns.find(x=>x.id===id);if(!t)return;
+const c=S.cards.find(x=>x.id===t.cardId);
+if(c){if(t.type==='sale'){c.stockQty=t2(c.stockQty+t.qty)}else{c.stockQty=t2(c.stockQty-t.qty);if(typeof t.prevBuy==='number')c.buyPrice=t2(t.prevBuy)}}
+S.cardTxns=S.cardTxns.filter(x=>x.id!==id);save();closeModal();renderView();toast('মুছে ফেলা হয়েছে')})}
 
 /* ================= পাবো-দেবো খাতা ================= */
 function renderLedger(){const pd=totPaboDibo();
@@ -777,10 +875,10 @@ save();closeModal();toast('যোগ হয়েছে');renderView()}
 /* ================= রিপোর্ট ================= */
 const PRESETS=[['today','আজ'],['yesterday','গতকাল'],['week','এই সপ্তাহ'],['month','এই মাস'],['lmonth','গত মাস'],['year','এই বছর']];
 function renderReport(){const r=cur.range;
-const g=statsGrocery(r.from,r.to),m=statsMfs(r.from,r.to),rc=statsRech(r.from,r.to);
+const g=statsGrocery(r.from,r.to),m=statsMfs(r.from,r.to),rc=statsRech(r.from,r.to),cds=statsCards(r.from,r.to);
 const cex=S.expenses.filter(e=>e.cat==='common'&&e.date>=r.from&&e.date<=r.to);const ce=t2(cex.reduce((a,e)=>a+e.amount,0));
-const total=t2(g.net+m.net+rc.net-ce);
-const mx=Math.max(Math.abs(g.net),Math.abs(m.net),Math.abs(rc.net),1);
+const total=t2(g.net+m.net+rc.net+cds.net-ce);
+const mx=Math.max(Math.abs(g.net),Math.abs(m.net),Math.abs(rc.net),Math.abs(cds.net),1);
 const tp={};S.sales.forEach(s=>{if(s.date>=r.from&&s.date<=r.to)s.items.forEach(i=>{tp[i.pid]=tp[i.pid]||{name:i.name,qty:0,prof:0};tp[i.pid].qty+=i.qty;tp[i.pid].prof+=i.qty*(i.sell-i.buy)})});
 const tops=Object.values(tp).sort((a,b)=>b.prof-a.prof).slice(0,5);
 el('view-report').innerHTML=
@@ -788,7 +886,7 @@ el('view-report').innerHTML=
 +'<div class="chips">'+PRESETS.map(p=>'<button class="segb'+(r.preset===p[0]?' on':'')+'" style="min-width:64px" onclick="setRange(\''+p[0]+'\')">'+p[1]+'</button>').join('')+'</div>'
 +'<div class="row2" style="margin-top:8px"><input class="inp" type="date" id="rep_from" value="'+r.from+'" onchange="customRange()"><input class="inp" type="date" id="rep_to" value="'+r.to+'" onchange="customRange()"></div></div>'
 +'<div class="card"><div class="ch">🥧 কোন ব্যবসা থেকে কত লাভ</div>'
-+[['🛒 মুদি দোকান',g.net],['💸 মোবাইল ব্যাংকিং',m.net],['📶 মোবাইল রিচার্জ',rc.net]].map(x=>'<div><div class="prow" style="justify-content:space-between"><b style="font-size:13.5px">'+x[0]+'</b><b class="'+(x[1]>=0?'grn':'red')+'">'+fmt(x[1])+'</b></div>'
++[['🛒 মুদি দোকান',g.net],['💸 মোবাইল ব্যাংকিং',m.net],['📶 মোবাইল রিচার্জ',rc.net],['🎫 রিচার্জ কার্ড',cds.net]].map(x=>'<div><div class="prow" style="justify-content:space-between"><b style="font-size:13.5px">'+x[0]+'</b><b class="'+(x[1]>=0?'grn':'red')+'">'+fmt(x[1])+'</b></div>'
 +'<div class="bar"><div class="barf" style="width:'+Math.min(100,Math.abs(x[1])/mx*100)+'%'+(x[1]<0?';background:linear-gradient(90deg,#e57373,#c62828)':'')+'"></div></div></div>').join('')
 +(cex.length?'<div class="lrow"><div class="lt"><small>➖ সাধারণ খরচ (ভাড়া, বিদ্যুৎ — সব ব্যবসার সাথে বাদ)</small></div><b class="red">−'+fmt(ce)+'</b></div>':'')
 +'<div class="lrow" style="border:none"><div class="lt"><b>⚖️ সর্বমোট নিট লাভ / ক্ষতি</b></div><b class="'+(total>=0?'grn':'red')+'" style="font-size:17px">'+fmt(total)+'</b></div></div>'
@@ -812,22 +910,94 @@ el('view-report').innerHTML=
 +'<tr><td><b>মোট</b></td><td class="r">'+bn(rc.cnt)+'</td><td class="r">'+bn(rc.vol)+'</td><td class="r grn">'+bn(rc.comm)+'</td></tr></table>'
 +(rc.exp>0?'<div class="lrow"><div class="lt">রিচার্জের খরচ</div><b class="red">−'+fmt(rc.exp)+'</b></div>':'')
 +'<div class="lrow"><div class="lt"><b>রিচার্জ ব্যবসার নিট লাভ</b></div><b class="'+(rc.net>=0?'grn':'red')+'">'+fmt(rc.net)+'</b></div></div>'
++'<div class="card"><div class="ch">🎫 রিচার্জ কার্ড (অপারেটর অনুযায়ী)</div>'
++((cds.cnt||cds.buy)?('<table class="tbl"><tr><th>অপারেটর</th><th class="r">কার্ড</th><th class="r">বিক্রয়</th><th class="r">লাভ</th></tr>'
++Object.keys(cds.per).map(k=>{const p=cds.per[k];return '<tr><td><b>'+esc(p.name)+'</b></td><td class="r">'+bn(p.qty)+'</td><td class="r">'+bn(p.sale)+'</td><td class="r grn">'+bn(p.prof)+'</td></tr>'}).join('')
++'<tr><td><b>মোট</b></td><td class="r">'+bn(cds.qty)+'</td><td class="r">'+bn(cds.sale)+'</td><td class="r grn">'+bn(cds.prof)+'</td></tr></table>'
++(cds.buy>0?'<div class="lrow"><div class="lt">কার্ড ক্রয় (নগদে গেছে — লাভ-ক্ষতিতে নয়)</div><b class="mut">'+fmt(cds.buy)+'</b></div>':'')
++'<div class="lrow"><div class="lt"><b>কার্ড ব্যবসার নিট লাভ</b></div><b class="'+(cds.net>=0?'grn':'red')+'">'+fmt(cds.net)+'</b></div></div>')
+:'<div class="empty">এই সময়ে কোনো কার্ড লেনদেন নেই</div>')+'</div>'
 +(cex.length?'<div class="card"><div class="ch">🏠 সাধারণ খরচ</div>'+cex.map(e=>'<div class="lrow"><div class="lt">'+esc(e.title)+'<small>'+fmtDate(e.date)+'</small></div><b class="red">−'+fmt(e.amount)+'</b></div>').join('')+'</div>':'')
 +'<div class="card"><div class="ch">📒 ব্যক্তির খাতা স্টেটমেন্ট</div>'
 +'<small class="mut" style="display:block;margin-bottom:8px">কোনো গ্রাহক/সাপ্লায়ারের নাম বাছুন — কবে কবে কত টাকা বাকি হলো, কত জমা হলো, চলমান হিসাবসহ পূর্ণ তালিকা পাবেন। দেনাদারকে দেখানোর জন্য কপিও করতে পারবেন।</small>'
 +'<button class="btn ghost" onclick="openPartyPicker(\'statement\')">📄 স্টেটমেন্ট দেখুন</button></div>'
++'<div class="card"><div class="ch">🗓️ দৈনিক বিস্তারিত রিপোর্ট</div><small class="mut" style="display:block;margin-bottom:8px">যেকোনো দিনের সম্পূর্ণ কাগজ — ক্রয়, বিক্রয়, খরচ, কমিশন, কার্ড, আদায়-পরিশোধ, নগদ আন্দোলন ও সর্বমোট লাভ-ক্ষতি একসাথে; শেয়ারও করতে পারবেন।</small><button class="btn" onclick="openDailyReport()">📄 দৈনিক রিপোর্ট দেখুন / শেয়ার করুন</button></div>'
 +'<button class="btn ghost" onclick="copyReport()">📋 রিপোর্ট কপি করুন (শেয়ার করার জন্য)</button>'}
 function copyReport(){const r=cur.range;
-const g=statsGrocery(r.from,r.to),m=statsMfs(r.from,r.to),rc=statsRech(r.from,r.to);
+const g=statsGrocery(r.from,r.to),m=statsMfs(r.from,r.to),rc=statsRech(r.from,r.to),rc2=statsCards(r.from,r.to);
 const ce=S.expenses.filter(e=>e.cat==='common'&&e.date>=r.from&&e.date<=r.to).reduce((a,e)=>a+e.amount,0);
-const tot=t2(g.net+m.net+rc.net-ce);
+const tot=t2(g.net+m.net+rc.net+rc2.net-ce);
 const L=[S.settings.shopName+' — হিসাব রিপোর্ট ('+fmtDate(r.from)+' — '+fmtDate(r.to)+')','',
 '🛒 মুদি: বিক্রয় '+fmt(g.tot)+', নিট লাভ '+fmt(g.net),
 '💸 ব্যাংকিং: কমিশন '+fmt(m.comm)+', ফি '+fmt(m.fee)+', নিট '+fmt(m.net),
 '📶 রিচার্জ: কমিশন '+fmt(rc.comm)+', নিট '+fmt(rc.net),
+'🎫 কার্ড: বিক্রয় '+fmt(rc2.sale)+', লাভ '+fmt(rc2.net),
 (ce>0?'🏠 সাধারণ খরচ: −'+fmt(ce):''),
 '⚖️ সর্বমোট নিট: '+fmt(tot)].filter(x=>x!=='').join('\n');
 try{navigator.clipboard.writeText(L).then(()=>toast('রিপোর্ট কপি হয়েছে 📋'),()=>toast('কপি করা যায়নি'))}catch(e){toast('কপি করা যায়নি')}}
+/* ================= দৈনিক বিস্তারিত রিপোর্ট ================= */
+function openDailyReport(ds){const date=ds||bizToday();
+const g=statsGrocery(date,date),m=statsMfs(date,date),rc=statsRech(date,date),cd=statsCards(date,date);
+const pu=S.purchases.filter(p=>p.date===date);
+const puTot=t2(pu.reduce((a,p)=>a+p.total,0)),puPaid=t2(pu.reduce((a,p)=>a+p.paid,0)),puDue=t2(pu.reduce((a,p)=>a+p.due,0));
+const exps=S.expenses.filter(e=>e.date===date);
+const exBy={};exps.forEach(e=>{const k=e.cat||'common';if(!exBy[k])exBy[k]=[];exBy[k].push(e)});
+const ce=t2((exBy.common||[]).reduce((a,e)=>a+e.amount,0));
+const st=S.partyTxns.filter(t=>t.date===date&&t.kind==='settle');
+const collected=t2(st.filter(t=>t.cash>0).reduce((a,t)=>a+t.cash,0));
+const paidOut=t2(st.filter(t=>t.cash<0).reduce((a,t)=>a-t.cash,0));
+let cin=0,cout=0;
+S.sales.forEach(s=>{if(s.date===date)cin+=s.paid||0});
+S.purchases.forEach(p=>{if(p.date===date)cout+=p.paid||0});
+S.expenses.forEach(e=>{if(e.date===date)cout+=e.amount||0});
+S.walletTxns.forEach(t=>{if(t.date===date){if(t.cD>0)cin+=t.cD;else cout-=t.cD}});
+S.rechTxns.forEach(t=>{if(t.date===date){if(t.cD>0)cin+=t.cD;else cout-=t.cD}});
+S.cardTxns.forEach(t=>{if(t.date===date){if((t.cD||0)>0)cin+=t.cD;else cout-=(t.cD||0)}});
+st.forEach(t=>{if(t.cash>0)cin+=t.cash;else cout-=t.cash});
+cin=t2(cin);cout=t2(cout);
+const net=t2(g.net+m.net+rc.net+cd.net-ce);
+const biz=(S.biz&&S.biz.date===date&&S.biz.openedAt)?('<div class="lrow"><div class="lt">🏪 দোকান '+((S.biz.open&&S.biz.date===date)?'চালু আছে':'বন্ধ করা হয়েছে')+'</div><b class="mut" style="font-size:13px">খোলা '+bizTime(S.biz.openedAt)+((S.biz.closedAt&&S.biz.lastDate===date)?' → বন্ধ '+bizTime(S.biz.closedAt):'')+'</b></div>'):'';
+const exList=(cat,label)=>((exBy[cat]||[]).length?('<div class="lrow"><div class="lt">'+label+': '+exBy[cat].map(e=>esc(e.title)+' ('+fmt(e.amount)+')').join(', ')+'</div></div>'):'');
+openModal('🗓️ দৈনিক বিস্তারিত রিপোর্ট',
+'<label class="lbl">যে দিনের রিপোর্ট দেখতে চান</label><input class="inp" type="date" value="'+date+'" onchange="openDailyReport(this.value)">'
++'<div class="card" style="background:#e9f5f2;margin:10px 0"><div class="ch" style="margin-bottom:4px">📅 '+fmtDate(date)+'</div>'+biz
++'<div class="lrow"><div class="lt"><b>⚖️ সর্বমোট নিট লাভ / ক্ষতি</b></div><b class="'+(net>=0?'grn':'red')+'" style="font-size:17px">'+fmt(net)+'</b></div></div>'
++'<div class="lrow"><div class="lt">🛒 মুদি বিক্রয় ('+bn(g.cnt)+' মামলা)</div><b>'+fmt(g.tot)+'</b></div>'
++'<div class="lrow"><div class="lt">🛒 বিকৃত পণ্যের ক্রয়মূল্য</div><b class="red">−'+fmt(g.cost)+'</b></div>'
++'<div class="lrow"><div class="lt">🛒 মুদি গ্রস লাভ</div><b class="grn">'+fmt(g.prof)+'</b></div>'
++'<div class="lrow"><div class="lt">🚚 মাল ক্রয় ('+bn(pu.length)+' বার)</div><b>'+fmt(puTot)+'</b><small class="mut" style="display:block">নগদে দেওয়া: '+fmt(puPaid)+(puDue>0?(' • বাকি: '+fmt(puDue)):'')+'</small></div>'
++'<div class="lrow"><div class="lt">💸 ব্যাংকিং কমিশন ('+bn(m.cnt)+' লেনদেন, ভলিউম '+fmt(m.vol)+')</div><b class="grn">'+fmt(m.comm)+'</b></div>'
++(m.fee>0?'<div class="lrow"><div class="lt">💸 ব্যাংকিং ফি</div><b class="red">−'+fmt(m.fee)+'</b></div>':'')
++'<div class="lrow"><div class="lt">📶 রিচার্জ কমিশন ('+bn(rc.cnt)+' রিচার্জ, ভলিউম '+fmt(rc.vol)+')</div><b class="grn">'+fmt(rc.comm)+'</b></div>'
++'<div class="lrow"><div class="lt">🎫 কার্ড বিক্রয় ('+bn(cd.qty)+' টি)</div><b>'+fmt(cd.sale)+'</b></div>'
++'<div class="lrow"><div class="lt">🎫 কার্ড ব্যবসার লাভ</div><b class="grn">'+fmt(cd.net)+'</b></div>'
++exList('grocery','🛒 মুদি খরচ')+exList('mfs','💸 ব্যাংকিং খরচ')+exList('rech','📶 রিচার্জ খরচ')+exList('common','🏠 সাধারণ খরচ')
++((collected||paidOut)?('<div class="lrow"><div class="lt">🤝 বাকি আদায় পেয়েছি</div><b class="grn">'+fmt(collected)+'</b></div>'+(paidOut?('<div class="lrow"><div class="lt">🤝 দেনা পরিশোধ করেছি</div><b class="red">−'+fmt(paidOut)+'</b></div>'):'')):'')
++'<div class="lrow" style="border:none"><div class="lt"><b>💰 নগদ আন্দোলন</b></div></div>'
++'<div class="lrow"><div class="lt">দিনে নগদ এসেছে</div><b class="grn">+'+fmt(cin)+'</b></div>'
++'<div class="lrow"><div class="lt">দিনে নগদ গেছে</div><b class="red">−'+fmt(cout)+'</b></div>',
+'<button class="btn ghost" onclick="closeModal()">বন্ধ</button><button class="btn" onclick="copyDaily(\''+date+'\')">📋 শেয়ার / কপি করুন</button>')}
+function buildDailyText(date){const g=statsGrocery(date,date),m=statsMfs(date,date),rc=statsRech(date,date),cd=statsCards(date,date);
+const pu=S.purchases.filter(p=>p.date===date);
+const puTot=t2(pu.reduce((a,p)=>a+p.total,0));
+const exps=S.expenses.filter(e=>e.date===date);const ce=t2(exps.filter(e=>e.cat==='common').reduce((a,e)=>a+e.amount,0));
+const st=S.partyTxns.filter(t=>t.date===date&&t.kind==='settle');
+const collected=t2(st.filter(t=>t.cash>0).reduce((a,t)=>a+t.cash,0));const paidOut=t2(st.filter(t=>t.cash<0).reduce((a,t)=>a-t.cash,0));
+const net=t2(g.net+m.net+rc.net+cd.net-ce);
+return [S.settings.shopName+' — দৈনিক রিপোর্ট ('+fmtDate(date)+')','',
+'🛒 মুদি: বিক্রয় '+fmt(g.tot)+', লাভ '+fmt(g.net)+(pu.length?(' • মাল ক্রয় '+fmt(puTot)):''),
+'💸 ব্যাংকিং: কমিশন '+fmt(m.comm)+', ফি '+fmt(m.fee)+', নিট '+fmt(m.net),
+'📶 রিচার্জ: '+bn(rc.cnt)+' টি, কমিশন '+fmt(rc.comm),
+'🎫 কার্ড: '+bn(cd.qty)+' টি বিক্রয় '+fmt(cd.sale)+', লাভ '+fmt(cd.net),
+(exps.length?('🧾 খরচ: '+exps.map(e=>e.title+' '+fmt(e.amount)).join(', ')):''),
+((collected||paidOut)?('🤝 আদায় '+fmt(collected)+(paidOut?(' • পরিশোধ '+fmt(paidOut)):'')):''),
+'','⚖️ সর্বমোট নিট লাভ: '+fmt(net)].filter(x=>x!=='').join('\n')}
+function copyDaily(date){const txt=buildDailyText(date);if(!txt)return;
+const done=()=>toast('রিপোর্ট কপি/শেয়ার প্রস্তুত 📋');
+try{if(navigator.share){navigator.share({text:txt}).then(done,()=>{try{navigator.clipboard.writeText(txt).then(done,()=>toast('কপি করা যায়নি'))}catch(e){toast('কপি করা যায়নি')}})}
+else if(navigator.clipboard){navigator.clipboard.writeText(txt).then(done,()=>toast('কপি করা যায়নি'))}
+else toast('এই ব্রাউজারে সমর্থিত নয়')}catch(e){toast('কপি করা যায়নি')}}
+
 /* ================= আরও মেনু ================= */
 function renderMore(){const v=el('view-more');
 if(cur.more==='settings')return renderSettings();
@@ -1118,6 +1288,12 @@ dRT('gp','rech',200,6,daysAgoISO(1),'01733333333');
 dRT('robi','rech',100,3,daysAgoISO(1),'01833333333');
 dRT('gp','top',1000,0,daysAgoISO(4),'');
 dRT('gp','comm',200,0,daysAgoISO(2),'');
+S.cards.push({id:'dc1',op:'gp',kind:'mb',name:'জিপি ১৯ টাকার এমবি কার্ড',buyPrice:18.5,sellPrice:19,stockQty:30,lowQty:10});
+S.cards.push({id:'dc2',op:'robi',kind:'taka',name:'রবি ৫০ টাকার কার্ড',buyPrice:48.5,sellPrice:50,stockQty:20,lowQty:5});
+S.cards.push({id:'dc3',op:'bl',kind:'min',name:'বাংলালিংক মিনিট কার্ড',buyPrice:9.5,sellPrice:10,stockQty:15,lowQty:5});
+S.cardTxns.push({id:uid(),ts:Date.now(),date:todayISO(),type:'sale',cardId:'dc1',op:'gp',kind:'mb',name:'জিপি ১৯ টাকার এমবি কার্ড',qty:2,buy:18.5,sell:19,total:38,profit:1,cD:38});
+S.cardTxns.push({id:uid(),ts:Date.now(),date:todayISO(),type:'sale',cardId:'dc2',op:'robi',kind:'taka',name:'রবি ৫০ টাকার কার্ড',qty:1,buy:48.5,sell:50,total:50,profit:1.5,cD:50});
+S.cardTxns.push({id:uid(),ts:Date.now(),date:daysAgoISO(1),type:'sale',cardId:'dc3',op:'bl',kind:'min',name:'বাংলালিংক মিনিট কার্ড',qty:3,buy:9.5,sell:10,total:30,profit:1.5,cD:30});
 S.expenses.push({id:uid(),ts:Date.now(),date:bizToday(),cat:'mfs',title:'চা-নাস্তা',amount:40});
 S.expenses.push({id:uid(),ts:Date.now(),date:daysAgoISO(3),cat:'common',title:'বিদ্যুৎ বিল',amount:350});
 S.expenses.push({id:uid(),ts:Date.now(),date:daysAgoISO(1),cat:'grocery',title:'দোকান সাজানো',amount:120});
@@ -1139,7 +1315,7 @@ S.settings.catalogV=CATALOG_VERSION;save();
 if(added>0&&canStore)setTimeout(function(){toast('📦 '+bn(added)+' টি পণ্য স্টক তালিকায় যোগ হয়েছে — দাম ও স্টক বসিয়ে নিন')},900)}}
 
 /* ================= চালু ================= */
-function init(){if(!S.orders)S.orders=[];if(!S.biz)S.biz={open:false,date:'',openedAt:'',closedAt:'',lastDate:''};
+function init(){if(!S.orders)S.orders=[];if(!S.cards)S.cards=[];if(!S.cardTxns)S.cardTxns=[];if(!S.biz)S.biz={open:false,date:'',openedAt:'',closedAt:'',lastDate:''};
 el('h_store').textContent=canStore?'সেভ চালু ✓':'প্রিভিউ';
 if(S.settings.passHash||S.settings.pin)showLock();
 importCatalog();
