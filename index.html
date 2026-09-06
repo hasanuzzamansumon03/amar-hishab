@@ -182,6 +182,7 @@ function freshState(){return{
   rechTxns:[],
   cards:[],
   cardTxns:[],
+  cashAdjusts:[],
   orders:[],
   biz:{open:false,date:'',openedAt:'',closedAt:'',lastDate:''}
 }}
@@ -215,7 +216,54 @@ function cashTotal(){let c=S.settings.openingCash||0;
   S.walletTxns.forEach(t=>c+=t.cD||0);
   S.rechTxns.forEach(t=>c+=t.cD||0);
   S.cardTxns.forEach(t=>c+=t.cD||0);
+  (S.cashAdjusts||[]).forEach(a=>c+=a.amount||0);
   return t2(c)}
+
+function cashParts(){const oc=S.settings.openingCash||0;
+let saleP=0;S.sales.forEach(s=>saleP+=(s.paid||0));
+let purP=0;S.purchases.forEach(p=>purP+=(p.paid||0));
+let exp=0;S.expenses.forEach(e=>exp+=(e.amount||0));
+let setIn=0,setOut=0;S.partyTxns.forEach(t=>{if((t.cash||0)>0)setIn+=t.cash;else if((t.cash||0)<0)setOut-=t.cash});
+let wD=0;S.walletTxns.forEach(t=>wD+=(t.cD||0));
+let rD=0;S.rechTxns.forEach(t=>rD+=(t.cD||0));
+let cD2=0;S.cardTxns.forEach(t=>cD2+=(t.cD||0));
+let adj=0;(S.cashAdjusts||[]).forEach(a=>adj+=(a.amount||0));
+return{oc:t2(oc),saleP:t2(saleP),purP:t2(purP),exp:t2(exp),setIn:t2(setIn),setOut:t2(setOut),wD:t2(wD),rD:t2(rD),cD:t2(cD2),adj:t2(adj)}}
+function openCashBreakdown(){const p=cashParts();const tot=cashTotal();
+const pm=v=>(v<0?'−':'+')+fmt(Math.abs(v));
+const cls=v=>v>=0?'grn':'red';
+let h='<div class="card" style="margin-bottom:10px;padding:4px 14px"><div class="ch" style="padding-top:10px">💰 নগদের পূর্ণ হিসাব — কোথা থেকে এলো</div>'
++'<div class="lrow"><div class="lt">🏦 প্রারম্ভিক তহবিল (সেটিংসে দেওয়া)</div><b>'+fmt(p.oc)+'</b></div>'
++(p.saleP?'<div class="lrow"><div class="lt">🛒 বিক্রয়ে নগদ পাওয়া</div><b class="grn">+'+fmt(p.saleP)+'</b></div>':'')
++(p.purP?'<div class="lrow"><div class="lt">🚚 ক্রয়ে নগদ দেওয়া</div><b class="red">−'+fmt(p.purP)+'</b></div>':'')
++(p.exp?'<div class="lrow"><div class="lt">🧾 সব খরচ</div><b class="red">−'+fmt(p.exp)+'</b></div>':'')
++(p.setIn?'<div class="lrow"><div class="lt">🤝 পাওনা আদায় পেয়েছি</div><b class="grn">+'+fmt(p.setIn)+'</b></div>':'')
++(p.setOut?'<div class="lrow"><div class="lt">🤝 দেনা পরিশোধ করেছি</div><b class="red">−'+fmt(p.setOut)+'</b></div>':'')
++(p.wD?'<div class="lrow"><div class="lt">💸 ব্যাংকিং লেনদেনের নগদ প্রভাব</div><b class="'+cls(p.wD)+'">'+pm(p.wD)+'</b></div>':'')
++(p.rD?'<div class="lrow"><div class="lt">📶 রিচার্জ থেকে আসা নগদ</div><b class="'+cls(p.rD)+'">'+pm(p.rD)+'</b></div>':'')
++(p.cD?'<div class="lrow"><div class="lt">🎫 কার্ড বিক্রয়/ক্রয়ের নগদ প্রভাব</div><b class="'+cls(p.cD)+'">'+pm(p.cD)+'</b></div>':'')
++(p.adj?'<div class="lrow"><div class="lt">⚖️ নগদ সমন্বয় (হাতের টাকা মিলিয়ে)</div><b class="'+cls(p.adj)+'">'+pm(p.adj)+'</b></div>':'')
++'<div class="lrow" style="border:none"><div class="lt"><b>💰 এখন হাতে থাকার কথা</b></div><b style="font-size:16px">'+fmt(tot)+'</b></div>'
++'<small class="mut">💡 এই টাকাটা আপনার দেওয়া প্রতিটি এন্ট্রি থেকে জমা হয়ে আসছে। ড্রয়ারে আসলে যত টাকা আছে তার সাথে না মিললে নিচের সমন্বয় বাটনে গুনে মিলিয়ে নিন।</small></div>';
+const ads=(S.cashAdjusts||[]);
+if(ads.length){h+='<div class="card" style="padding:4px 14px;margin-bottom:10px"><div class="ch" style="padding-top:10px">⚖️ সমন্বয়ের ইতিহাস</div>'+ads.slice().reverse().map(a=>'<div class="lrow"><div class="lt"><b>'+(a.amount>=0?'+':'−')+fmt(Math.abs(a.amount))+' সমন্বয়</b><small>'+fmtDate(a.date)+(a.note?' • '+esc(a.note):'')+'</small></div><button class="del" onclick="delCashAdjust(\''+a.id+'\')">🗑</button></div>').join('')+'</div>'}
+openModal('💰 নগদ তহবিল — পূর্ণ হিসাব',h,
+'<button class="btn ghost" onclick="closeModal()">বন্ধ</button><button class="btn" onclick="openCashAdjust()">⚖️ হাতের টাকা মিলাই (সমন্বয়)</button>')}
+function openCashAdjust(){
+openModal('⚖️ নগদ সমন্বয় — হিসাব বাস্তবের সাথে মিলান',
+'<small class="mut" style="display:block;margin-bottom:8px">অ্যাপের হিসাবে এখন হাতে থাকার কথা <b>'+fmt(cashTotal())+'</b>। ড্রয়ারে/হাতে টাকা গুনে আসল যেটা আছে সেটা লিখুন — পার্থক্যটা অ্যাপ সমন্বয় হিসেবে জমা রাখবে, বাকি কোনো হিসাব বদলাবে না।</small>'
++'<label class="lbl">আসলে হাতে আছে ৳ *</label><input class="inp" id="ca_real" type="number" inputmode="decimal" oninput="caDiff()">'
++'<label class="lbl">কারণ/মন্তব্য (ঐচ্ছিক)</label><input class="inp" id="ca_note" placeholder="যেমন: অ্যাপ ব্যবহারের আগে থেকেই টাকা ছিল">'
++'<div id="ca_diff" class="mut" style="margin-top:6px"></div>',
+'<button class="btn ghost" onclick="openCashBreakdown()">← ফিরে যান</button><button class="btn" onclick="saveCashAdjust()">✅ সমন্বয় সংরক্ষণ</button>')}
+function caDiff(){const real=+el('ca_real').value||0;const d=t2(real-cashTotal());const box=el('ca_diff');if(!box)return;
+box.innerHTML=(!el('ca_real').value)?'':(d===0?'<span class="grn">✓ হিসাব ঠিকই আছে — কিছু করার নেই</span>':'পার্থক্য: <b class="'+(d>0?'grn':'red')+'">'+(d>0?'+':'−')+fmt(Math.abs(d))+'</b> সমন্বয় হিসেবে জমা হবে')}
+function saveCashAdjust(){const real=+el('ca_real').value||0;if(real<=0)return toast('টাকার পরিমাণ লিখুন');
+const d=t2(real-cashTotal());if(d===0)return toast('হিসাব এখনই ঠিক আছে ✓');
+if(!S.cashAdjusts)S.cashAdjusts=[];
+S.cashAdjusts.push({id:uid(),ts:Date.now(),date:bizToday(),amount:d,note:el('ca_note').value||'হাতের টাকা মিলানো'});
+save();closeModal();toast('নগদ সমন্বয় সম্পন্ন ✅ এখন হাতে: '+fmt(cashTotal()));renderView()}
+function delCashAdjust(id){confirmBox('এই সমন্বয়টি মুছে ফেলবেন? নগদ হিসাব আগের অবস্থায় ফিরে যাবে।',()=>{S.cashAdjusts=(S.cashAdjusts||[]).filter(a=>a.id!==id);save();renderView();openCashBreakdown()})}
 function partyBal(id){let b=0;S.partyTxns.forEach(t=>{if(t.partyId===id)b+=(t.kind==='due'?t.amount:-(t.amount||0))});return t2(b)}
 function partyName(id){const p=S.parties.find(x=>x.id===id);return p?p.name:''}
 function totPaboDibo(){let po=0,db=0;S.parties.forEach(p=>{const b=partyBal(p.id);if(p.type==='cust'&&b>0)po+=b;if(p.type==='supp'&&b>0)db+=b});return{po:t2(po),db:t2(db)}}
@@ -330,7 +378,7 @@ el('view-home').innerHTML=
 (canStore?'':'<div class="alertcard">⚠️ <b>প্রিভিউ মোড:</b> এখানে ডেটা সেভ হবে না (ডেমো ডেটা দেখানো হচ্ছে)। ফাইলটি ডাউনলোড করে ফোনের Chrome-এ খুললে বা হোস্ট করলে সব ডেটা সেভ হবে।</div>')
 +remindBanner()+shopCard()
 +'<div class="hero"><div class="hdate">📅 '+fmtDate(TD)+'</div><div class="hshop">'+esc(S.settings.shopName)+'</div>'
-+'<div class="hcash"><span>💰 নগদ তহবিল (হাতে)</span><b>'+fmt(cashTotal())+'</b></div></div>'
++'<div class="hcash" style="cursor:pointer" onclick="openCashBreakdown()"><span>💰 নগদ তহবিল (হাতে) <small style="opacity:.75">(ট্যাপ → কোথা থেকে এলো)</small></span><b>'+fmt(cashTotal())+'</b></div></div>'
 +'<div class="qgrid">'
 +'<button class="qbtn" onclick="openSaleModal()">🛒<span>বিক্রয়</span></button>'
 +'<button class="qbtn" onclick="openWalletTxnModal()">💸<span>ব্যাংকিং</span></button>'
@@ -1057,6 +1105,7 @@ S.expenses.forEach(e=>{if(e.date===date)cout+=e.amount||0});
 S.walletTxns.forEach(t=>{if(t.date===date){if(t.cD>0)cin+=t.cD;else cout-=t.cD}});
 S.rechTxns.forEach(t=>{if(t.date===date){if(t.cD>0)cin+=t.cD;else cout-=t.cD}});
 S.cardTxns.forEach(t=>{if(t.date===date){if((t.cD||0)>0)cin+=t.cD;else cout-=(t.cD||0)}});
+(S.cashAdjusts||[]).forEach(a=>{if(a.date===date){if((a.amount||0)>0)cin+=a.amount;else cout-=(a.amount||0)}});
 st.forEach(t=>{if(t.cash>0)cin+=t.cash;else cout-=t.cash});
 cin=t2(cin);cout=t2(cout);
 const net=t2(g.net+m.net+rc.net+cd.net-ce);
@@ -1419,7 +1468,7 @@ S.settings.catalogV=CATALOG_VERSION;save();
 if(added>0&&canStore)setTimeout(function(){toast('📦 '+bn(added)+' টি পণ্য স্টক তালিকায় যোগ হয়েছে — দাম ও স্টক বসিয়ে নিন')},900)}}
 
 /* ================= চালু ================= */
-function init(){if(!S.orders)S.orders=[];if(!S.cards)S.cards=[];if(!S.cardTxns)S.cardTxns=[];if(!S.biz)S.biz={open:false,date:'',openedAt:'',closedAt:'',lastDate:''};
+function init(){if(!S.orders)S.orders=[];if(!S.cards)S.cards=[];if(!S.cardTxns)S.cardTxns=[];if(!S.cashAdjusts)S.cashAdjusts=[];if(!S.biz)S.biz={open:false,date:'',openedAt:'',closedAt:'',lastDate:''};
 el('h_store').textContent=canStore?'সেভ চালু ✓':'প্রিভিউ';
 if(S.settings.passHash||S.settings.pin)showLock();
 importCatalog();
