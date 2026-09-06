@@ -233,15 +233,15 @@ function openCashBreakdown(){const p=cashParts();const tot=cashTotal();
 const pm=v=>(v<0?'−':'+')+fmt(Math.abs(v));
 const cls=v=>v>=0?'grn':'red';
 let h='<div class="card" style="margin-bottom:10px;padding:4px 14px"><div class="ch" style="padding-top:10px">💰 নগদের পূর্ণ হিসাব — কোথা থেকে এলো</div>'
-+'<div class="lrow"><div class="lt">🏦 প্রারম্ভিক তহবিল (সেটিংসে দেওয়া)</div><b>'+fmt(p.oc)+'</b></div>'
-+(p.saleP?'<div class="lrow"><div class="lt">🛒 বিক্রয়ে নগদ পাওয়া</div><b class="grn">+'+fmt(p.saleP)+'</b></div>':'')
-+(p.purP?'<div class="lrow"><div class="lt">🚚 ক্রয়ে নগদ দেওয়া</div><b class="red">−'+fmt(p.purP)+'</b></div>':'')
-+(p.exp?'<div class="lrow"><div class="lt">🧾 সব খরচ</div><b class="red">−'+fmt(p.exp)+'</b></div>':'')
-+(p.setIn?'<div class="lrow"><div class="lt">🤝 পাওনা আদায় পেয়েছি</div><b class="grn">+'+fmt(p.setIn)+'</b></div>':'')
-+(p.setOut?'<div class="lrow"><div class="lt">🤝 দেনা পরিশোধ করেছি</div><b class="red">−'+fmt(p.setOut)+'</b></div>':'')
-+(p.wD?'<div class="lrow"><div class="lt">💸 ব্যাংকিং লেনদেনের নগদ প্রভাব</div><b class="'+cls(p.wD)+'">'+pm(p.wD)+'</b></div>':'')
-+(p.rD?'<div class="lrow"><div class="lt">📶 রিচার্জ থেকে আসা নগদ</div><b class="'+cls(p.rD)+'">'+pm(p.rD)+'</b></div>':'')
-+(p.cD?'<div class="lrow"><div class="lt">🎫 কার্ড বিক্রয়/ক্রয়ের নগদ প্রভাব</div><b class="'+cls(p.cD)+'">'+pm(p.cD)+'</b></div>':'')
++'<div class="lrow" style="cursor:pointer" onclick="closeModal();cur.more=\'settings\';go(\'more\')"><div class="lt">🏦 প্রারম্ভিক তহবিল <small class="mut">সেটিংসে বদলান ›</small></div><b>'+fmt(p.oc)+'</b></div>'
++(p.saleP?'<div class="lrow" style="cursor:pointer" onclick="cashDetail(\'sales\')"><div class="lt">🛒 বিক্রয়ে নগদ পাওয়া <small class="mut">দেখুন ›</small></div><b class="grn">+'+fmt(p.saleP)+'</b></div>':'')
++(p.purP?'<div class="lrow" style="cursor:pointer" onclick="cashDetail(\'purchases\')"><div class="lt">🚚 ক্রয়ে নগদ দেওয়া <small class="mut">দেখুন ›</small></div><b class="red">−'+fmt(p.purP)+'</b></div>':'')
++(p.exp?'<div class="lrow" style="cursor:pointer" onclick="cashDetail(\'expenses\')"><div class="lt">🧾 সব খরচ <small class="mut">দেখুন ›</small></div><b class="red">−'+fmt(p.exp)+'</b></div>':'')
++(p.setIn?'<div class="lrow" style="cursor:pointer" onclick="cashDetail(\'setIn\')"><div class="lt">🤝 পাওনা আদায় পেয়েছি <small class="mut">কার কাছ থেকে ›</small></div><b class="grn">+'+fmt(p.setIn)+'</b></div>':'')
++(p.setOut?'<div class="lrow" style="cursor:pointer" onclick="cashDetail(\'setOut\')"><div class="lt">🤝 দেনা পরিশোধ করেছি <small class="mut">কাকে দিয়েছি ›</small></div><b class="red">−'+fmt(p.setOut)+'</b></div>':'')
++(p.wD?'<div class="lrow" style="cursor:pointer" onclick="cashDetail(\'wallet\')"><div class="lt">💸 ব্যাংকিং লেনদেনের নগদ প্রভাব <small class="mut">দেখুন ›</small></div><b class="'+cls(p.wD)+'">'+pm(p.wD)+'</b></div>':'')
++(p.rD?'<div class="lrow" style="cursor:pointer" onclick="cashDetail(\'rech\')"><div class="lt">📶 রিচার্জ থেকে আসা নগদ <small class="mut">দেখুন ›</small></div><b class="'+cls(p.rD)+'">'+pm(p.rD)+'</b></div>':'')
++(p.cD?'<div class="lrow" style="cursor:pointer" onclick="cashDetail(\'card\')"><div class="lt">🎫 কার্ড বিক্রয়/ক্রয়ের নগদ প্রভাব <small class="mut">দেখুন ›</small></div><b class="'+cls(p.cD)+'">'+pm(p.cD)+'</b></div>':'')
 +(p.adj?'<div class="lrow"><div class="lt">⚖️ নগদ সমন্বয় (হাতের টাকা মিলিয়ে)</div><b class="'+cls(p.adj)+'">'+pm(p.adj)+'</b></div>':'')
 +'<div class="lrow" style="border:none"><div class="lt"><b>💰 এখন হাতে থাকার কথা</b></div><b style="font-size:16px">'+fmt(tot)+'</b></div>'
 +'<small class="mut">💡 এই টাকাটা আপনার দেওয়া প্রতিটি এন্ট্রি থেকে জমা হয়ে আসছে। ড্রয়ারে আসলে যত টাকা আছে তার সাথে না মিললে নিচের সমন্বয় বাটনে গুনে মিলিয়ে নিন।</small></div>';
@@ -264,6 +264,32 @@ if(!S.cashAdjusts)S.cashAdjusts=[];
 S.cashAdjusts.push({id:uid(),ts:Date.now(),date:bizToday(),amount:d,note:el('ca_note').value||'হাতের টাকা মিলানো'});
 save();closeModal();toast('নগদ সমন্বয় সম্পন্ন ✅ এখন হাতে: '+fmt(cashTotal()));renderView()}
 function delCashAdjust(id){confirmBox('এই সমন্বয়টি মুছে ফেলবেন? নগদ হিসাব আগের অবস্থায় ফিরে যাবে।',()=>{S.cashAdjusts=(S.cashAdjusts||[]).filter(a=>a.id!==id);save();renderView();openCashBreakdown()})}
+
+function cashDetail(kind){const parts=cashParts();const T={sales:'🛒 বিক্রয়ে নগদ পাওয়া — কোন বিক্রয় থেকে',purchases:'🚚 ক্রয়ে নগদ দেওয়া — কোন ক্রয়ে',expenses:'🧾 সব খরচ — কোন খরচে',setIn:'🤝 পাওনা আদায় — কার কাছ থেকে পেয়েছি',setOut:'🤝 দেনা পরিশোধ — কাকে দিয়েছি',wallet:'💸 ব্যাংকিং — কোন লেনদেন থেকে',rech:'📶 রিচার্জ — কোন রিচার্জ থেকে',card:'🎫 কার্ড — কোন লেনদেন থেকে'};
+const SIGN={sales:'+',purchases:'−',expenses:'−',setIn:'+',setOut:'−',wallet:'',rech:'+',card:''};
+let items=[],total=0,more='';
+if(kind==='sales'){total=parts.saleP;const all=S.sales;more=all.length>100?'(সর্বশেষ ১০০টি দেখানো হচ্ছে)':'';
+items=all.slice().reverse().slice(0,100).map(s=>({act:"openSaleModal('"+s.id+"')",t:(s.items&&s.items[0]?esc(s.items[0].name):'বিক্রয়')+((s.items&&s.items.length>1)?' +'+bn(s.items.length-1)+' আইটেম':''),sub:fmtDate(s.date)+(s.partyId?' • '+esc(partyName(s.partyId)):'')+(s.due>0?' • <span class="red">বাকি '+fmt(s.due)+'</span>':''),v:'+'+fmt(s.paid||0),cls:'grn'}))}
+else if(kind==='purchases'){total=parts.purP;const all=S.purchases;more=all.length>100?'(সর্বশেষ ১০০টি)':'';
+items=all.slice().reverse().slice(0,100).map(u=>({act:"openPurchaseModal(null,'"+u.id+"')",t:esc(u.name)+' — '+bn(u.qty)+' '+esc(u.unit||''),sub:fmtDate(u.date)+(u.partyId?' • '+esc(partyName(u.partyId)):'')+(u.due>0?' • <span class="red">বাকি '+fmt(u.due)+'</span>':''),v:'−'+fmt(u.paid||0),cls:'red'}))}
+else if(kind==='expenses'){total=parts.exp;const all=S.expenses;more=all.length>100?'(সর্বশেষ ১০০টি)':'';
+items=all.slice().reverse().slice(0,100).map(e=>({act:"openExpenseModal('"+e.id+"')",t:esc(e.title||'খরচ'),sub:fmtDate(e.date)+' • '+(EX_CAT[e.cat]||e.cat),v:'−'+fmt(e.amount||0),cls:'red'}))}
+else if(kind==='setIn'||kind==='setOut'){const pos=kind==='setIn';total=pos?parts.setIn:parts.setOut;
+items=S.partyTxns.filter(t=>t.kind==='settle'&&((t.cash||0)>0)===pos).slice().reverse().slice(0,100).map(t=>({act:"editPartyTxn('"+t.id+"')",t:esc(partyName(t.partyId)),sub:fmtDate(t.date)+(t.note?' • '+esc(t.note):''),v:(pos?'+':'−')+fmt(Math.abs(t.cash||0)),cls:pos?'grn':'red'}))}
+else if(kind==='wallet'){total=parts.wD;
+items=S.walletTxns.filter(t=>(t.cD||0)!==0).slice().reverse().slice(0,100).map(t=>{const wl=S.wallets.find(x=>x.key===t.wkey);const ty=MFS_TYPES[t.type];
+return{act:"openWalletTxnModal(null,'"+t.id+"')",t:esc(wl?wl.name:t.wkey)+' — '+(ty?ty.lbl.split(' (')[0]:t.type),sub:fmtDate(t.date)+(t.cust?' • '+esc(t.cust):'')+((t.comm||0)>0?' • কমিশন '+fmt(t.comm):''),v:((t.cD||0)>0?'+':'−')+fmt(Math.abs(t.cD||0)),cls:(t.cD||0)>0?'grn':'red'}})}
+else if(kind==='rech'){total=parts.rD;
+items=S.rechTxns.slice().reverse().slice(0,100).map(t=>{const o=S.operators.find(x=>x.key===t.op);
+return{act:"openRechModal(null,'"+t.id+"')",t:esc(o?o.name:t.op),sub:fmtDate(t.date)+(t.phone?' • '+esc(t.phone):'')+((t.comm||0)>0?' • কমিশন '+fmt(t.comm):''),v:'+'+fmt(t.cD||0),cls:'grn'}})}
+else if(kind==='card'){total=parts.cD;
+items=S.cardTxns.filter(t=>(t.cD||0)!==0).slice().reverse().slice(0,100).map(t=>({act:"editCardTxn('"+t.id+"')",t:esc(t.name),sub:fmtDate(t.date)+' • '+bn(t.qty)+' টি'+(t.type==='buy'?' • কার্ড ক্রয়':''),v:((t.cD||0)>0?'+':'−')+fmt(Math.abs(t.cD||0)),cls:(t.cD||0)>0?'grn':'red'}))}
+const totCls=SIGN[kind]==='−'?'red':(SIGN[kind]==='+'?'grn':'');
+let h='<div class="card" style="margin-bottom:10px;padding:8px 14px"><div class="lrow" style="border:none;padding:0"><div class="lt"><b>এই অংশের মোট</b><small class="mut">'+more+'</small></div><b class="'+totCls+'" style="font-size:16px">'+SIGN[kind]+fmt(total)+'৳</b></div></div>';
+h+=items.length?items.map(it=>'<div class="lrow"><div class="lt"><b>'+it.t+'</b><small>'+it.sub+'</small></div><div class="rt"><b class="'+it.cls+'">'+it.v+'</b></div><button class="del" onclick="'+it.act+'">✏️</button></div>').join(''):'<div class="empty">কোনো এন্ট্রি নেই</div>';
+h+='<small class="mut" style="display:block;margin-top:8px">💡 যেকোনো এন্ট্রির ✏️ বাটনে চেপে সংশোধন করুন — নগদ, স্টক, খাতা সব নিজে থেকেই ঠিক হয়ে যাবে।</small>';
+openModal(T[kind]||'বিস্তারিত',h,
+'<button class="btn ghost" onclick="openCashBreakdown()">← ফিরে যান</button><button class="btn" onclick="closeModal()">বন্ধ</button>')}
 function partyBal(id){let b=0;S.partyTxns.forEach(t=>{if(t.partyId===id)b+=(t.kind==='due'?t.amount:-(t.amount||0))});return t2(b)}
 function partyName(id){const p=S.parties.find(x=>x.id===id);return p?p.name:''}
 function totPaboDibo(){let po=0,db=0;S.parties.forEach(p=>{const b=partyBal(p.id);if(p.type==='cust'&&b>0)po+=b;if(p.type==='supp'&&b>0)db+=b});return{po:t2(po),db:t2(db)}}
