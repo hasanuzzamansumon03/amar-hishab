@@ -229,7 +229,21 @@ let rD=0;S.rechTxns.forEach(t=>rD+=(t.cD||0));
 let cD2=0;S.cardTxns.forEach(t=>cD2+=(t.cD||0));
 let adj=0;(S.cashAdjusts||[]).forEach(a=>adj+=(a.amount||0));
 return{oc:t2(oc),saleP:t2(saleP),purP:t2(purP),exp:t2(exp),setIn:t2(setIn),setOut:t2(setOut),wD:t2(wD),rD:t2(rD),cD:t2(cD2),adj:t2(adj)}}
-function openCashBreakdown(){const p=cashParts();const tot=cashTotal();
+function rechCashInfo(){let rc=0;S.rechTxns.forEach(t=>rc+=(t.cD||0));let cc=0;S.cardTxns.forEach(t=>cc+=(t.cD||0));
+const opT=t2(S.operators.reduce((a,o)=>a+opBal(o.key),0));
+const cardStock=t2(S.cards.reduce((a,c)=>a+(c.stockQty||0)*(c.buyPrice||0),0));
+const profAll=t2(S.rechTxns.reduce((a,t)=>a+(t.comm||0),0)+S.cardTxns.filter(t=>t.type==='sale').reduce((a,t)=>a+(t.profit||0),0));
+return{rc:t2(rc),cc:t2(cc),cash:t2(rc+cc),opT:opT,cardStock:cardStock,total:t2(rc+cc+opT+cardStock),profAll:profAll}}
+function rechBizCard(){const r=rechCashInfo();let rt,ct;const BS=bizStats();
+if(BS){rt=BS.r;ct=BS.c}else{const TD=bizToday();rt=statsRech(TD,TD);ct=statsCards(TD,TD)}
+return '<div class="card" style="border:1.5px solid #bfdbfe;background:#f0f8ff"><div class="ch">📶 রিচার্জ+কার্ড ব্যবসার আলাদা খাতা</div>'
++'<div class="b3"><div><small>হাতে নগদ (এই ব্যবসার)</small><b style="color:#0369a1">'+fmt(r.cash)+'</b><small class="mut">মুদির টাকা থেকে আলাদা</small></div>'
++'<div><small>অপারেটর ব্যালেন্স</small><b>'+fmt(r.opT)+'</b><small class="mut">ফ্লেক্সিলোডে আটকে আছে</small></div>'
++'<div><small>কার্ড স্টকের মূল্য</small><b>'+fmt(r.cardStock)+'</b><small class="mut">ক্রয় দামে</small></div></div>'
++'<div class="lrow"><div class="lt"><b>📊 এই ব্যবসার মোট সম্পদ</b></div><b>'+fmt(r.total)+'</b></div>'
++'<div class="lrow" style="border:none"><div class="lt"><b>💰 লাভ</b></div><b class="grn">আজ '+fmt(t2(rt.net+ct.net))+' • সব মিলিয়ে '+fmt(r.profAll)+'</b></div>'
++'<small class="mut">💡 দিনশেষে হাতের মোট নগদ থেকে উপরের "হাতে নগদ" অংশটুকু আলাদা করে রাখুন — বাকিটা মুদি ব্যবসার।</small></div>'}
+function openCashBreakdown(){const p=cashParts();const tot=cashTotal();const rci=rechCashInfo();const oth=t2(tot-rci.cash);
 const pm=v=>(v<0?'−':'+')+fmt(Math.abs(v));
 const cls=v=>v>=0?'grn':'red';
 let h='<div class="card" style="margin-bottom:10px;padding:4px 14px"><div class="ch" style="padding-top:10px">💰 নগদের পূর্ণ হিসাব — কোথা থেকে এলো</div>'
@@ -243,8 +257,10 @@ let h='<div class="card" style="margin-bottom:10px;padding:4px 14px"><div class=
 +(p.rD?'<div class="lrow" style="cursor:pointer" onclick="cashDetail(\'rech\')"><div class="lt">📶 রিচার্জ থেকে আসা নগদ <small class="mut">দেখুন ›</small></div><b class="'+cls(p.rD)+'">'+pm(p.rD)+'</b></div>':'')
 +(p.cD?'<div class="lrow" style="cursor:pointer" onclick="cashDetail(\'card\')"><div class="lt">🎫 কার্ড বিক্রয়/ক্রয়ের নগদ প্রভাব <small class="mut">দেখুন ›</small></div><b class="'+cls(p.cD)+'">'+pm(p.cD)+'</b></div>':'')
 +(p.adj?'<div class="lrow"><div class="lt">⚖️ নগদ সমন্বয় (হাতের টাকা মিলিয়ে)</div><b class="'+cls(p.adj)+'">'+pm(p.adj)+'</b></div>':'')
-+'<div class="lrow" style="border:none"><div class="lt"><b>💰 এখন হাতে থাকার কথা</b></div><b style="font-size:16px">'+fmt(tot)+'</b></div>'
-+'<small class="mut">💡 এই টাকাটা আপনার দেওয়া প্রতিটি এন্ট্রি থেকে জমা হয়ে আসছে। ড্রয়ারে আসলে যত টাকা আছে তার সাথে না মিললে নিচের সমন্বয় বাটনে গুনে মিলিয়ে নিন।</small></div>';
++'<div class="lrow" style="border:none"><div class="lt"><b>💰 এখন হাতে থাকার কথা</b></div><b style="font-size:16px">'+fmt(tot)+'</b></div></div>'
++'<div class="card" style="margin:10px 0;padding:8px 12px;background:#f0f8ff;border:1px solid #bfdbfe"><div class="lrow" style="border:none;padding:3px 0"><div class="lt"><b>📶 রিচার্জ+কার্ড ব্যবসার অংশ</b><small class="mut">দিনশেষে এটুকু আলাদা করে রাখুন</small></div><b style="color:#0369a1">'+fmt(rci.cash)+'</b></div>'
++'<div class="lrow" style="border:none;padding:3px 0"><div class="lt"><b>🛒 মুদি ও অন্যান্য ব্যবসার অংশ</b></div><b>'+fmt(oth)+'</b></div></div>'
++'<small class="mut">💡 এই টাকাটা আপনার দেওয়া প্রতিটি এন্ট্রি থেকে জমা হয়ে আসছে। ড্রয়ারে আসলে যত টাকা আছে তার সাথে না মিললে নিচের সমন্বয় বাটনে গুনে মিলিয়ে নিন।</small>';
 const ads=(S.cashAdjusts||[]);
 if(ads.length){h+='<div class="card" style="padding:4px 14px;margin-bottom:10px"><div class="ch" style="padding-top:10px">⚖️ সমন্বয়ের ইতিহাস</div>'+ads.slice().reverse().map(a=>'<div class="lrow"><div class="lt"><b>'+(a.amount>=0?'+':'−')+fmt(Math.abs(a.amount))+' সমন্বয়</b><small>'+fmtDate(a.date)+(a.note?' • '+esc(a.note):'')+'</small></div><button class="del" onclick="delCashAdjust(\''+a.id+'\')">🗑</button></div>').join('')+'</div>'}
 openModal('💰 নগদ তহবিল — পূর্ণ হিসাব',h,
@@ -383,11 +399,13 @@ S.biz.open=true;save();renderView();toast('🏪 দোকান চালু —
 function shopCloseBtn(){const b=S.biz||{};if(!b.open)return toast('দোকান এখন বন্ধ আছে');
 confirmBox('দোকান বন্ধ করতে চান? এই মুহূর্ত পর্যন্ত যত হিসাব হয়েছে, সেগুলোই এই দিনের হিসাব হিসেবে থেমে থাকবে — পরেও দেখা যাবে, রিপোর্টেও থাকবে ✓',()=>{
 b.open=false;b.closedAt=new Date().toISOString();b.lastDate=b.date;save();renderView();setTimeout(function(){showDaySummary(b.date,b.openedAt,b.closedAt)},60)})}
-function showDaySummary(date,openedAt,closedAt){const from=bizTs(openedAt);const end=bizTs(closedAt)>0?bizTs(closedAt):9007199254740991;let g,m,r,cd,ce;
-if(from>0){const L=bizLists(from,end);g=statsGrocery(date,date,L);m=statsMfs(date,date,L);r=statsRech(date,date,L);cd=statsCards(date,date,L);ce=t2(L.expenses.filter(e=>e.cat==='common').reduce((a,e)=>a+e.amount,0))}
+function showDaySummary(date,openedAt,closedAt){const from=bizTs(openedAt);const end=bizTs(closedAt)>0?bizTs(closedAt):9007199254740991;let g,m,r,cd,ce,L=null;
+if(from>0){L=bizLists(from,end);g=statsGrocery(date,date,L);m=statsMfs(date,date,L);r=statsRech(date,date,L);cd=statsCards(date,date,L);ce=t2(L.expenses.filter(e=>e.cat==='common').reduce((a,e)=>a+e.amount,0))}
 else{g=statsGrocery(date,date);m=statsMfs(date,date);r=statsRech(date,date);cd=statsCards(date,date);ce=t2(S.expenses.filter(e=>e.cat==='common'&&e.date===date).reduce((a,e)=>a+e.amount,0))}
 const net=t2(g.net+m.net+r.net+cd.net-ce);const bb=S.biz||{};
-const cashRows=((typeof bb.startCash==='number')?'<div class="lrow"><div class="lt">💰 শুরুর নগদ (দোকান খোলার সময় হাতে)</div><b>'+fmt(bb.startCash)+'</b></div>':'')+'<div class="lrow"><div class="lt">💰 এখন হাতে নগদ</div><b>'+fmt(cashTotal())+'</b></div>';
+const rDay=t2((L?L.rechTxns:S.rechTxns.filter(t=>t.date===date)).reduce((a,t)=>a+(t.cD||0),0)+(L?L.cardTxns:S.cardTxns.filter(t=>t.date===date)).reduce((a,t)=>a+(t.cD||0),0));
+const cashRows=((typeof bb.startCash==='number')?'<div class="lrow"><div class="lt">💰 শুরুর নগদ (দোকান খোলার সময় হাতে)</div><b>'+fmt(bb.startCash)+'</b></div>':'')+'<div class="lrow"><div class="lt">💰 এখন হাতে নগদ</div><b>'+fmt(cashTotal())+'</b></div>'
++(rDay!==0?'<div class="lrow" style="border:none"><div class="lt"><b>📶 রিচার্জ+কার্ড ব্যবসার নগদ</b><small class="mut">দিনশেষে এটুকু মুদির টাকা থেকে আলাদা করে রাখুন</small></div><b style="color:#0369a1">'+fmt(rDay)+'</b></div>':'');
 openModal('🏪 ব্যবসা দিনের হিসাব — '+fmtDate(date),
 '<small class="mut" style="display:block;margin-bottom:8px">খোলা '+bizTime(openedAt)+' → বন্ধ '+bizTime(closedAt)+' — শুধু দোকান চালু থাকা সময়ের লেনদেনই এখানে</small>'
 +'<div class="lrow"><div class="lt">🛒 মুদি বিক্রয় ('+bn(g.cnt)+' মামলা)</div><b>'+fmt(g.tot)+'</b></div>'
@@ -398,7 +416,7 @@ openModal('🏪 ব্যবসা দিনের হিসাব — '+fmtDate
 +cashRows
 +'<div class="lrow" style="border:none"><div class="lt"><b>⚖️ আজকের সর্বমোট লাভ</b></div><b class="'+(net>=0?'grn':'red')+'" style="font-size:17px">'+fmt(net)+'</b></div>',
 '<button class="btn" onclick="closeModal()">ঠিক আছে</button>')}
-function renderHome(){const TD=bizToday();const pd=totPaboDibo();const sv=stockValue();
+function renderHome(){const TD=bizToday();const pd=totPaboDibo();const sv=stockValue();const rci=rechCashInfo();
 el('h_shop').textContent=S.settings.shopName||'আমার হিসাব';
 el('view-home').innerHTML=
 (canStore?'':'<div class="alertcard">⚠️ <b>প্রিভিউ মোড:</b> এখানে ডেটা সেভ হবে না (ডেমো ডেটা দেখানো হচ্ছে)। ফাইলটি ডাউনলোড করে ফোনের Chrome-এ খুললে বা হোস্ট করলে সব ডেটা সেভ হবে।</div>')
@@ -419,6 +437,7 @@ el('view-home').innerHTML=
 +'<div class="card"><div class="ch">👛 সব ব্যালান্স (স্টক)</div>'
 +'<small class="mut">💸 মোবাইল ব্যাংকিং ওয়ালেট</small><div class="chips" style="margin:5px 0 10px">'+S.wallets.map(w=>'<div class="chip"><small>'+esc(w.name)+'</small><b>'+fmt(wBal(w.key))+'</b></div>').join('')+'</div>'
 +'<small class="mut">📶 রিচার্জ অপারেটর</small><div class="chips" style="margin:5px 0 10px">'+S.operators.map(o=>'<div class="chip"><small>'+esc(o.name)+'</small><b>'+fmt(opBal(o.key))+'</b></div>').join('')+'</div>'
++'<div class="lrow"><div class="lt"><small>📶 রিচার্জ+কার্ড ব্যবসার হাতে নগদ (মুদি থেকে আলাদা)</small><b style="color:#0369a1">'+fmt(rci.cash)+'</b></div><div class="rt"><small class="mut">ব্যবসার মোট সম্পদ</small><b>'+fmt(rci.total)+'</b></div></div>'
 +'<div class="lrow"><div class="lt"><small>📦 দোকানের পণ্য স্টক (ক্রয় মূল্যে)</small><b>'+fmt(sv.buy)+'</b></div><div class="rt"><small class="mut">বিক্রয় মূল্যে</small><b>'+fmt(sv.sell)+'</b></div></div></div>'
 +'<div class="card"><div class="ch">🤝 পাবো-দেবো <button class="lnk" onclick="cur.more=\'menu\';go(\'ledger\')">খাতা দেখুন ›</button></div>'
 +'<div class="b3"><div><small>🔵 পাবো (পাব বাকি)</small><b class="grn">'+fmt(pd.po)+'</b></div><div><small>🔴 দেবো (দেব বাকি)</small><b class="red">'+fmt(pd.db)+'</b></div><div><small>⚠️ কম স্টক</small><b class="red">'+bn(sv.low)+' টি পণ্য</b></div></div></div>'
@@ -694,7 +713,7 @@ const g2=el('rsub');
 if((cur.rsub||'flex')==='card'){renderCardSection(g2)}
 else{
 const txs=S.rechTxns.slice().reverse().slice(0,40);
-g2.innerHTML=''
+g2.innerHTML=rechBizCard()
 +S.operators.map(o=>{const tm=S.rechTxns.filter(t=>t.op===o.key&&t.date===TD);const tc=t2(tm.reduce((a,t)=>a+(t.comm||0),0));
 return '<div class="card"><div class="lrow" style="border:none;padding-top:0"><div class="lt"><b>'+esc(o.name)+'</b><small>কমিশন '+bn(o.rate)+'৳ / হাজার রিচার্জে</small></div>'
 +'<div class="rt"><small class="mut">ব্যালান্স</small><b>'+fmt(opBal(o.key))+'</b><small class="grn">আজ '+fmt(tc)+'</small></div></div>'
@@ -804,7 +823,7 @@ function renderCardSection(g){const TD=bizToday();
 const todayTx=S.cardTxns.filter(t=>t.date===TD&&t.type==='sale');
 const tq=t2(todayTx.reduce((a,t)=>a+t.qty,0)),ts=t2(todayTx.reduce((a,t)=>a+t.total,0)),tp=t2(todayTx.reduce((a,t)=>a+t.profit,0));
 const stockBuy=t2(S.cards.reduce((a,c)=>a+c.stockQty*c.buyPrice,0));
-g.innerHTML='<div class="card"><div class="ch">🎫 রিচার্জ কার্ড ব্যবসা</div>'
+g.innerHTML=rechBizCard()+'<div class="card"><div class="ch">🎫 রিচার্জ কার্ড ব্যবসা</div>'
 +'<div class="b3"><div><small>আজকের কার্ড বিক্রয়</small><b>'+bn(tq)+' টি</b></div><div><small>বিক্রয় টাকা</small><b>'+fmt(ts)+'</b></div><div><small>আজকের লাভ</small><b class="grn">'+fmt(tp)+'</b></div></div>'
 +'<small class="mut" style="display:block;margin-top:6px">কার্ড স্টকের মূল্য (ক্রয় মূল্যে): '+fmt(stockBuy)+'</small></div>'
 +'<div class="row2" style="margin-bottom:11px"><button class="btn" onclick="openCardSaleModal()">🛒 কার্ড বিক্রয়</button><button class="btn ghost" onclick="openCardModal()">＋ নতুন কার্ড সেটআপ</button></div>'
@@ -1154,7 +1173,8 @@ openModal('🗓️ দৈনিক বিস্তারিত রিপোর�
 +((collected||paidOut)?('<div class="lrow"><div class="lt">🤝 বাকি আদায় পেয়েছি</div><b class="grn">'+fmt(collected)+'</b></div>'+(paidOut?('<div class="lrow"><div class="lt">🤝 দেনা পরিশোধ করেছি</div><b class="red">−'+fmt(paidOut)+'</b></div>'):'')):'')
 +'<div class="lrow" style="border:none"><div class="lt"><b>💰 নগদ আন্দোলন</b></div></div>'
 +'<div class="lrow"><div class="lt">দিনে নগদ এসেছে</div><b class="grn">+'+fmt(cin)+'</b></div>'
-+'<div class="lrow"><div class="lt">দিনে নগদ গেছে</div><b class="red">−'+fmt(cout)+'</b></div>',
++'<div class="lrow"><div class="lt">দিনে নগদ গেছে</div><b class="red">−'+fmt(cout)+'</b></div>'
++'<div class="lrow" style="border:none"><div class="lt"><b>📶 এর মধ্যে রিচার্জ+কার্ড ব্যবসার নগদ</b><small class="mut">আলাদা করে রাখুন</small></div><b style="color:#0369a1">'+fmt(t2(S.rechTxns.filter(t=>t.date===date).reduce((a,t)=>a+(t.cD||0),0)+S.cardTxns.filter(t=>t.date===date).reduce((a,t)=>a+(t.cD||0),0)))+'</b></div>',
 '<button class="btn ghost" onclick="closeModal()">বন্ধ</button><button class="btn" onclick="copyDaily(\''+date+'\')">📋 শেয়ার / কপি করুন</button>')}
 function buildDailyText(date){const g=statsGrocery(date,date),m=statsMfs(date,date),rc=statsRech(date,date),cd=statsCards(date,date);
 const pu=S.purchases.filter(p=>p.date===date);
@@ -1170,6 +1190,7 @@ return [S.settings.shopName+' — দৈনিক রিপোর্ট ('+fmtDa
 '🎫 কার্ড: '+bn(cd.qty)+' টি বিক্রয় '+fmt(cd.sale)+', লাভ '+fmt(cd.net),
 (exps.length?('🧾 খরচ: '+exps.map(e=>e.title+' '+fmt(e.amount)).join(', ')):''),
 ((collected||paidOut)?('🤝 আদায় '+fmt(collected)+(paidOut?(' • পরিশোধ '+fmt(paidOut)):'')):''),
+'📶 রিচার্জ+কার্ড নগদ (আলাদা করুন): '+fmt(t2(S.rechTxns.filter(t=>t.date===date).reduce((a,t)=>a+(t.cD||0),0)+S.cardTxns.filter(t=>t.date===date).reduce((a,t)=>a+(t.cD||0),0))),
 '','⚖️ সর্বমোট নিট লাভ: '+fmt(net)].filter(x=>x!=='').join('\n')}
 function copyDaily(date){const txt=buildDailyText(date);if(!txt)return;
 const done=()=>toast('রিপোর্ট কপি/শেয়ার প্রস্তুত 📋');
