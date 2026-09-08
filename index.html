@@ -234,48 +234,65 @@ const opT=t2(S.operators.reduce((a,o)=>a+opBal(o.key),0));
 const cardStock=t2(S.cards.reduce((a,c)=>a+(c.stockQty||0)*(c.buyPrice||0),0));
 const profAll=t2(S.rechTxns.reduce((a,t)=>a+(t.comm||0),0)+S.cardTxns.filter(t=>t.type==='sale').reduce((a,t)=>a+(t.profit||0),0));
 return{rc:t2(rc),cc:t2(cc),cash:t2(rc+cc),opT:opT,cardStock:cardStock,total:t2(rc+cc+opT+cardStock),profAll:profAll}}
-function flexLedger(){let cap=0,vol=0,cash=0,prof=0;const per={};
-S.operators.forEach(o=>{per[o.key]={name:o.name,cap:(o.opening||0),vol:0,cash:0,prof:0}});
-S.rechTxns.forEach(t=>{if(!per[t.op])per[t.op]={name:t.op,cap:0,vol:0,cash:0,prof:0};
-const pp=per[t.op];
-if(t.type==='top'){pp.cap+=t.amount;cap+=t.amount}
-else if(t.type==='rech'){pp.vol+=t.amount;pp.cash+=(t.cD||0);vol+=t.amount;cash+=(t.cD||0);pp.prof+=(t.comm||0);prof+=(t.comm||0)}
-else if(t.type==='comm'){pp.cash+=(t.cD||0);cash+=(t.cD||0)}});
+function flexLedger(){const txs=S.rechTxns.slice().sort((a,b)=>(a.ts||0)-(b.ts||0));
+let opening=0;S.operators.forEach(o=>opening+=(o.opening||0));
+let pool=0,fresh=opening,grossTop=0,vol=0,prof=0;const per={};
+S.operators.forEach(o=>{per[o.key]={name:o.name,top:(o.opening||0),vol:0,prof:0}});
+txs.forEach(t=>{if(!per[t.op])per[t.op]={name:t.op,top:0,vol:0,prof:0};const pp=per[t.op];
+if(t.type==='top'){const amt=t.amount||0;grossTop+=amt;pp.top+=amt;
+const need=Math.max(0,amt-pool);fresh+=need;pool=Math.max(0,pool-amt)}
+else if(t.type==='rech'){const c=t.cD||0;pool+=c;vol+=t.amount||0;pp.vol+=t.amount||0;prof+=(t.comm||0);pp.prof+=(t.comm||0)}
+else if(t.type==='comm'){pool+=(t.cD||0)}
+else if(t.type==='adjust'){pool=Math.max(0,pool+(t.oD||0))}});
+Object.keys(per).forEach(k=>{const q=per[k];q.top=t2(q.top);q.vol=t2(q.vol);q.prof=t2(q.prof);q.bal=opBal(k)});
 let bal=0;S.operators.forEach(o=>bal+=opBal(o.key));
-Object.keys(per).forEach(k=>{const pp=per[k];pp.cap=t2(pp.cap);pp.vol=t2(pp.vol);pp.cash=t2(pp.cash);pp.prof=t2(pp.prof);pp.bal=opBal(k)});
-return{cap:t2(cap),vol:t2(vol),cash:t2(cash),prof:t2(prof),bal:t2(bal),per:per}}
-function cardLedger(){let sale=0,prof=0;const per={};
-S.cards.forEach(c=>{const nm=(S.operators.find(o=>o.key===c.op)||{}).name||c.op;if(!per[c.op])per[c.op]={name:nm,sale:0,prof:0,stock:0};per[c.op].stock+=(c.stockQty||0)*(c.buyPrice||0)});
-S.cardTxns.forEach(t=>{if(t.type!=='sale')return;sale+=t.total||0;prof+=t.profit||0;
-if(!per[t.op])per[t.op]={name:(S.operators.find(o=>o.key===t.op)||{}).name||t.op,sale:0,prof:0,stock:0};
-per[t.op].sale+=t.total||0;per[t.op].prof+=t.profit||0});
+return{cap:t2(fresh),recycled:t2(Math.max(0,grossTop+opening-fresh)),grossTop:t2(grossTop),vol:t2(vol),prof:t2(prof),bal:t2(bal),pool:t2(pool),per:per}}
+function cardInitCost(c){let bought=0,sold=0;S.cardTxns.forEach(t=>{if(t.cardId===c.id){if(t.type==='buy')bought+=(t.qty||0);else if(t.type==='sale')sold+=(t.qty||0)}});
+const initQ=Math.max(0,(c.stockQty||0)-bought+sold);if(initQ<=0)return 0;
+let price=c.buyPrice||0;
+const cts=S.cardTxns.filter(t=>t.cardId===c.id).sort((a,b)=>(a.ts||0)-(b.ts||0));
+if(cts.length){const f=cts[0];if(f.type==='sale'&&typeof f.buy==='number')price=f.buy;else if(f.type==='buy'&&typeof f.prevBuy==='number')price=f.prevBuy}
+return t2(initQ*price)}
+function cardLedger(){const txs=S.cardTxns.slice().sort((a,b)=>(a.ts||0)-(b.ts||0));
+const initCost={};let initTotal=0;
+S.cards.forEach(c=>{const cst=cardInitCost(c);initCost[c.id]=cst;initTotal+=cst});
+let pool=0,fresh=initTotal,grossBuy=initTotal,sale=0,prof=0;const per={};
+S.cards.forEach(c=>{const nm=(S.operators.find(o=>o.key===c.op)||{}).name||c.op;if(!per[c.op])per[c.op]={name:nm,buy:0,sale:0,prof:0,stock:0};per[c.op].buy+=(initCost[c.id]||0);per[c.op].stock+=(c.stockQty||0)*(c.buyPrice||0)});
+txs.forEach(t=>{if(!per[t.op])per[t.op]={name:(S.operators.find(o=>o.key===t.op)||{}).name||t.op,buy:0,sale:0,prof:0,stock:0};const pp=per[t.op];
+if(t.type==='buy'){const amt=t.total||0;grossBuy+=amt;pp.buy+=amt;
+const need=Math.max(0,amt-pool);fresh+=need;pool=Math.max(0,pool-amt)}
+else if(t.type==='sale'){const amt=t.total||0;pool+=amt;sale+=amt;pp.sale+=amt;prof+=(t.profit||0);pp.prof+=(t.profit||0)}});
 const stock=t2(S.cards.reduce((a,c)=>a+(c.stockQty||0)*(c.buyPrice||0),0));
-Object.keys(per).forEach(k=>{const pp=per[k];pp.sale=t2(pp.sale);pp.prof=t2(pp.prof);pp.stock=t2(pp.stock);pp.cap=t2(pp.stock+pp.sale-pp.prof)});
-return{cap:t2(stock+sale-prof),sale:t2(sale),prof:t2(prof),stock:stock,per:per}}
+Object.keys(per).forEach(k=>{const q=per[k];q.buy=t2(q.buy);q.sale=t2(q.sale);q.prof=t2(q.prof);q.stock=t2(q.stock)});
+return{cap:t2(fresh),recycled:t2(Math.max(0,grossBuy-fresh)),grossBuy:t2(grossBuy),sale:t2(sale),prof:t2(prof),pool:t2(pool),stock:stock,per:per}}
 function rechBizCard(){const F=flexLedger(),C=cardLedger();
-const capT=t2(F.cap+C.cap),cashT=t2(F.cash+C.sale),profT=t2(F.prof+C.prof);
-const opRows=L=>{const ks=Object.keys(L).filter(k=>L[k].cap>0||L[k].vol>0||L[k].sale>0||L[k].stock>0);
+const capT=t2(F.cap+C.cap),poolT=t2(F.pool+C.pool),profT=t2(F.prof+C.prof);
+const opRows=(L,isCard)=>{const ks=Object.keys(L).filter(k=>L[k].top>0||L[k].vol>0||L[k].buy>0||L[k].sale>0||L[k].stock>0);
 if(!ks.length)return '';
 return '<div class="lrow" style="border:none;padding-bottom:2px"><div class="lt"><b style="font-size:12.5px">📌 প্রতি অপারেটর হিসাব</b></div></div>'
-+ks.map(k=>{const q=L[k];return '<div class="lrow"><div class="lt"><b>'+esc(q.name)+'</b><small>মূলধন '+fmt(q.cap)+(q.vol!==undefined?(' • বিক্রয় '+fmt(q.vol)):' • বিক্রয় '+fmt(q.sale))+(q.bal!==undefined?(' • ব্যালেন্স '+fmt(q.bal)):(' • স্টক '+fmt(q.stock)))+' • <span class="grn">লাভ '+fmt(q.prof)+'</span></small></div></div>'}).join('')};
++ks.map(k=>{const q=L[k];const sub=isCard?('ক্রয় '+fmt(q.buy)+' • বিক্রয় '+fmt(q.sale)+' • স্টক '+fmt(q.stock)):('টপ-আপ '+fmt(q.top)+' • বিক্রয় '+fmt(q.vol)+' • ব্যালেন্স '+fmt(q.bal));
+return '<div class="lrow"><div class="lt"><b>'+esc(q.name)+'</b><small>'+sub+' • <span class="grn">লাভ '+fmt(q.prof)+'</span></small></div></div>'}).join('')};
 return '<div class="card" style="border:1.5px solid #bfdbfe;background:#f0f8ff"><div class="ch">📶 রিচার্জ (ফ্লেক্সিলোড) ব্যবসার হিসাব</div>'
-+'<div class="lrow"><div class="lt">💵 মোট মূলধন যোগ করেছি <small class="mut">সব টপ-আপ + প্রারম্ভিক</small></div><b>'+fmt(F.cap)+'</b></div>'
++'<div class="lrow"><div class="lt">💵 মোট মূলধন <small class="mut">বাইরে থেকে নতুন টাকা (প্রারম্ভিক + অতিরিক্ত টপ-আপ)</small></div><b>'+fmt(F.cap)+'</b></div>'
++(F.recycled>0?'<div class="lrow"><div class="lt">♻️ নিজের ব্যবসার টাকায় টপ-আপ <small class="mut">মূলধনে ধরা হয়নি</small></div><b>'+fmt(F.recycled)+'</b></div>':'')
 +'<div class="lrow"><div class="lt">🔄 মোট রিচার্জ বিক্রয়</div><b>'+fmt(F.vol)+'</b></div>'
-+'<div class="lrow"><div class="lt">💰 রিচার্জের টাকা হাতে এসেছে</div><b class="grn">'+fmt(F.cash)+'</b></div>'
++'<div class="lrow"><div class="lt">💰 এই ব্যবসার হাতে নগদ এখন <small class="mut">রিচার্জ থেকে জমা টাকা</small></div><b class="grn">'+fmt(F.pool)+'</b></div>'
 +'<div class="lrow"><div class="lt">🏦 অপারেটরে ব্যালেন্স আছে</div><b>'+fmt(F.bal)+'</b></div>'
 +'<div class="lrow" style="border:none"><div class="lt">📈 লাভ (কমিশন)</div><b class="grn">'+fmt(F.prof)+'</b></div>'
-+opRows(F.per)+'</div>'
++opRows(F.per,false)+'</div>'
 +'<div class="card" style="border:1.5px solid #bfdbfe;background:#f0f8ff;margin-top:10px"><div class="ch">🎫 রিচার্জ কার্ড ব্যবসার হিসাব</div>'
-+'<div class="lrow"><div class="lt">💵 মূলধন <small class="mut">কার্ড ক্রয়ে মোট বিনিয়োগ</small></div><b>'+fmt(C.cap)+'</b></div>'
-+'<div class="lrow"><div class="lt">🛒 মোট কার্ড বিক্রয় — টাকা হাতে এসেছে</div><b class="grn">'+fmt(C.sale)+'</b></div>'
++'<div class="lrow"><div class="lt">💵 মোট মূলধন <small class="mut">বাইরে থেকে দেওয়া টাকা</small></div><b>'+fmt(C.cap)+'</b></div>'
++(C.recycled>0?'<div class="lrow"><div class="lt">♻️ নিজের ব্যবসার টাকায় কার্ড ক্রয় <small class="mut">মূলধনে ধরা হয়নি</small></div><b>'+fmt(C.recycled)+'</b></div>':'')
++'<div class="lrow"><div class="lt">🛒 মোট কার্ড বিক্রয়</div><b>'+fmt(C.sale)+'</b></div>'
++'<div class="lrow"><div class="lt">💰 এই ব্যবসার হাতে নগদ এখন <small class="mut">কার্ড বিক্রি থেকে জমা টাকা</small></div><b class="grn">'+fmt(C.pool)+'</b></div>'
 +'<div class="lrow"><div class="lt">📦 স্টকে কার্ড আছে <small class="mut">ক্রয় মূল্যে</small></div><b>'+fmt(C.stock)+'</b></div>'
 +'<div class="lrow" style="border:none"><div class="lt">📈 লাভ</div><b class="grn">'+fmt(C.prof)+'</b></div>'
-+opRows(C.per)+'</div>'
++opRows(C.per,true)+'</div>'
 +'<div class="card" style="padding:8px 14px"><div class="lrow" style="border:none;padding-bottom:3px"><div class="lt"><b>📊 দুই ব্যবসা মিলিয়ে</b></div></div>'
-+'<div class="lrow"><div class="lt">💵 মোট মূলধন</div><b>'+fmt(capT)+'</b></div>'
-+'<div class="lrow"><div class="lt">💰 হাতে মোট নগদ <small class="mut">দুই ব্যবসার বিক্রয় থেকে</small></div><b>'+fmt(cashT)+'</b></div>'
++'<div class="lrow"><div class="lt">💵 মোট মূলধন (বাইরে থেকে)</div><b>'+fmt(capT)+'</b></div>'
++'<div class="lrow"><div class="lt">💰 দুই ব্যবসায় হাতে নগদ</div><b>'+fmt(poolT)+'</b></div>'
 +'<div class="lrow" style="border:none"><div class="lt">📈 মোট লাভ</div><b class="grn">'+fmt(profT)+'</b></div>'
-+'<small class="mut">💡 কার্ডের লাভ বিক্রয়ের সাথে সাথেই হাতে আসে ✓ ফ্লেক্সিলোডের কমিশন ('+fmt(F.prof)+') অপারেটরের কাছে জমা থাকে — উত্তোলন করলে সেটাও হাতে আসবে। সূত্র: হাতে নগদ + অপারেটর ব্যালেন্স + স্টক − মূলধন = হাতে আসা লাভ</small></div>'}
++'<small class="mut">♻️ নিয়ম: বিক্রয়ের টাকা হাতে থাকলে সেটা দিয়ে টপ-আপ/কার্ড কিনলে মূলধন বাড়ে না — শুধু অতিরিক্ত টাকাটুকুই মূলধন। ✓ ফ্লেক্স: মূলধন = অপারেটর ব্যালেন্স + হাতে নগদ • কার্ড: মূলধন + লাভ = স্টক + হাতে নগদ</small></div>'}
 
 function openCashBreakdown(){const p=cashParts();const tot=cashTotal();const rci=rechCashInfo();const oth=t2(tot-rci.cash);
 const pm=v=>(v<0?'−':'+')+fmt(Math.abs(v));
@@ -471,7 +488,7 @@ el('view-home').innerHTML=
 +'<div class="card"><div class="ch">👛 সব ব্যালান্স (স্টক)</div>'
 +'<small class="mut">💸 মোবাইল ব্যাংকিং ওয়ালেট</small><div class="chips" style="margin:5px 0 10px">'+S.wallets.map(w=>'<div class="chip"><small>'+esc(w.name)+'</small><b>'+fmt(wBal(w.key))+'</b></div>').join('')+'</div>'
 +'<small class="mut">📶 রিচার্জ অপারেটর</small><div class="chips" style="margin:5px 0 10px">'+S.operators.map(o=>'<div class="chip"><small>'+esc(o.name)+'</small><b>'+fmt(opBal(o.key))+'</b></div>').join('')+'</div>'
-+'<div class="lrow"><div class="lt"><small>📶 রিচার্জ+কার্ড ব্যবসা — মূলধন '+fmt(t2(FL.cap+CL.cap))+'</small><b style="color:#0369a1">বিক্রয়ে হাতে এসেছে '+fmt(t2(FL.cash+CL.sale))+'</b></div><div class="rt"><small class="mut">মোট লাভ</small><b class="grn">'+fmt(t2(FL.prof+CL.prof))+'</b></div></div>'
++'<div class="lrow"><div class="lt"><small>📶 রিচার্জ+কার্ড ব্যবসা — মূলধন '+fmt(t2(FL.cap+CL.cap))+'</small><b style="color:#0369a1">হাতে নগদ '+fmt(t2(FL.pool+CL.pool))+'</b></div><div class="rt"><small class="mut">মোট লাভ</small><b class="grn">'+fmt(t2(FL.prof+CL.prof))+'</b></div></div>'
 +'<div class="lrow"><div class="lt"><small>📦 দোকানের পণ্য স্টক (ক্রয় মূল্যে)</small><b>'+fmt(sv.buy)+'</b></div><div class="rt"><small class="mut">বিক্রয় মূল্যে</small><b>'+fmt(sv.sell)+'</b></div></div></div>'
 +'<div class="card"><div class="ch">🤝 পাবো-দেবো <button class="lnk" onclick="cur.more=\'menu\';go(\'ledger\')">খাতা দেখুন ›</button></div>'
 +'<div class="b3"><div><small>🔵 পাবো (পাব বাকি)</small><b class="grn">'+fmt(pd.po)+'</b></div><div><small>🔴 দেবো (দেব বাকি)</small><b class="red">'+fmt(pd.db)+'</b></div><div><small>⚠️ কম স্টক</small><b class="red">'+bn(sv.low)+' টি পণ্য</b></div></div></div>'
